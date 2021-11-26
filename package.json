@@ -1,0 +1,19 @@
+{
+  "name": "af-consul",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "author": "Viacheslav Makarov <vvmakarov@corp.finam.ru>",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Bazilio-san/af-consul-api.git"
+  },
+  "license": "ISC",
+  "files": [
+    "index.js"
+  ],
+  "devDependencies": {
+    "consul": "^0.40.0",
+    "lodash": "^4.17.21"
+  }
+}
