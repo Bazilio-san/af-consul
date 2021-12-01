@@ -1,0 +1,28 @@
+.thumbs.db
+thumbs.db
+desctop.ini
+node_modules
+
+
+# Log files
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+!.gitkeep
+
+# Editor directories and files
+.idea
+
+# DEV directories
+_misc/
+/_tmp/
+tmp/
+
+/sync-bf.cmd
+/sync-bf.sh
+/t?.js
+t.*
+local*.*
+*.local.*
+/package-lock.json
+/yarn.lock
