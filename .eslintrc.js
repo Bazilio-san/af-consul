@@ -5,19 +5,23 @@ module.exports = {
     es2021: true,
   },
   extends: [
-    'plugin:vue/essential',
     'airbnb-base',
   ],
+  root: true,
+  parser: '@typescript-eslint/parser',
+  plugins: ['prefer-arrow', 'import', '@typescript-eslint'],
   parserOptions: {
-    ecmaVersion: 13,
+    sourceType: 'module',
+    // ecmaVersion: 13,
   },
-  plugins: [
-    'vue',
-  ],
+  ignorePatterns: ['node_modules/', '**/*.json', '**/dist/**/*.*'],
   rules: {
     'no-param-reassign': 'off',
     'max-len': ['warn', 200],
     'no-underscore-dangle': 'off',
     'consistent-return': 'off',
+    'no-unused-vars': 'warn',
+    'import/extensions': 'off',
+    'import/no-unresolved': 'off',
   },
 };
