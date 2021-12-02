@@ -1,8 +1,8 @@
 {
   "name": "af-consul",
-  "version": "1.0.6",
+  "version": "1.0.7",
   "description": "A highly specialized function library",
-  "main": "./dist/cjs/index.js",
+  "main": "./dist/cjs/src/index.js",
   "module": "./dist/esm/index.js",
   "types": "./dist/types/index.d.ts",
   "author": "Viacheslav Makarov <vvmakarov@bazilio.ru>",
