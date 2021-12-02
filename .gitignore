@@ -27,3 +27,4 @@ local*.*
 /package-lock.json
 /yarn.lock
 /.env
+**/dist
