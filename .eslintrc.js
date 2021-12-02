@@ -23,5 +23,14 @@ module.exports = {
     'no-unused-vars': 'warn',
     'import/extensions': 'off',
     'import/no-unresolved': 'off',
+    'object-curly-newline': [
+      'error',
+      {
+        ObjectExpression: { multiline: true, minProperties: 3 },
+        ObjectPattern: { multiline: true },
+        ImportDeclaration: 'never',
+        ExportDeclaration: { multiline: true, minProperties: 3 },
+      },
+    ],
   },
 };

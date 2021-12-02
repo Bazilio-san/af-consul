@@ -1,41 +1,41 @@
-import os from 'os';
-import dns from 'dns';
-import Consul from 'consul';
+import * as os from 'os';
+import * as dns from 'dns';
+import * as Consul from 'consul';
 import * as _ from 'lodash';
 
 export interface SocketInfo {
-  host: string,
-  port: string | number
+  host: string;
+  port: string | number;
 }
 
 export interface RegisterCheck extends Consul.Agent.Service.RegisterCheck {
-  name?: string,
-  tcp?: string,
-  dockercontainerid?: string,
-  shell?: string,
-  timeout?: string,
-  deregistercriticalserviceafter?: string
+  name?: string;
+  tcp?: string;
+  dockercontainerid?: string;
+  shell?: string;
+  timeout?: string;
+  deregistercriticalserviceafter?: string;
 }
 
 export interface RegisterOptions extends Consul.Agent.Service.RegisterOptions {
   check?: RegisterCheck | undefined;
   checks?: RegisterCheck[] | undefined;
-  connect?: any,
-  proxy?: any,
-  taggedAddresses?: any
+  connect?: any;
+  proxy?: any;
+  taggedAddresses?: any;
 }
 
 export interface ServiceOptions {
-  registerConfig: RegisterOptions,
-  thisService?: { host?: string, port?: string | number },
-  force?: boolean
+  registerConfig: RegisterOptions;
+  thisService?: { host?: string; port?: string | number };
+  forceReRegister?: boolean;
 }
 
-export interface ConsulOptions extends Consul.ConsulOptions {
+export interface ConsulAgentOptions extends Consul.ConsulOptions {
 }
 
-export default ({ consulOptions, logger }: { consulOptions: ConsulOptions, logger?: any }) => {
-  const consulInstance = Consul(consulOptions); // { host, port, secure, defaults: { token } }
+export default ({ consulAgentOptions, logger }: { consulAgentOptions: ConsulAgentOptions; logger?: any }) => {
+  const consulInstance = Consul(consulAgentOptions); // { host, port, secure, defaults: { token } }
 
   if (!logger?.info) {
     logger = {
@@ -46,12 +46,8 @@ export default ({ consulOptions, logger }: { consulOptions: ConsulOptions, logge
 
   // @ts-ignore
   consulInstance._ext('onRequest', (request, next) => {
-    const {
-      req: {
-        hostname, port, path, method, headers,
-      },
-    } = request;
-    const { secure } = consulOptions;
+    const { req: { hostname, port, path, method, headers } } = request;
+    const { secure } = consulAgentOptions;
     let msg = `${method} http${secure ? 's' : ''}://${hostname}${port ? `:${port}` : ''}${path}`;
     Object.entries(headers).forEach(([key, value]) => {
       msg += `\n${key}: ${value}`;
@@ -64,7 +60,7 @@ export default ({ consulOptions, logger }: { consulOptions: ConsulOptions, logge
     options,
     withError,
     result,
-  }: { options?: any, withError?: boolean, result?: any }): any {
+  }: { options?: any; withError?: boolean; result?: any }): any {
     return new Promise((resolve, reject) => {
       const callback = (err: Error | any, res: any) => {
         if (err) {
@@ -92,9 +88,10 @@ export default ({ consulOptions, logger }: { consulOptions: ConsulOptions, logge
 
   return {
     // Returns fully qualified domain name
-    getFQDN(h = os.hostname(), withError = false) {
+    getFQDN(h?: string, withError?: boolean) {
+      h = h || os.hostname();
       return new Promise((resolve, reject) => {
-        dns.lookup(h, { hints: dns.ADDRCONFIG }, (err, ip) => {
+        dns.lookup(h as string, { hints: dns.ADDRCONFIG }, (err: any, ip: string) => {
           if (err) {
             return withError ? reject(err) : resolve(null);
           }
@@ -138,9 +135,6 @@ export default ({ consulOptions, logger }: { consulOptions: ConsulOptions, logge
 
     // Registers a new service.
     agentServiceRegister(options: RegisterOptions, withError: boolean = false) {
-      // connect: {},
-      // proxy: {},
-      // taggedAddresses: {}
       return common('agent.service.register', {
         options, withError, result: true,
       });
@@ -174,13 +168,13 @@ export default ({ consulOptions, logger }: { consulOptions: ConsulOptions, logge
           return false;
         }
       } else {
-        logger.info(`Service '${serviceId}' is not registered with Consul`);
+        logger.info(`Service '${serviceId}' is not registered in Consul`);
       }
       return true;
     },
 
     async registerService(options: ServiceOptions) {
-      const { registerConfig, thisService, force = true } = options;
+      const { registerConfig, thisService, forceReRegister = true } = options;
       const serviceId = registerConfig.id || registerConfig.name;
 
       const thisServicePort = thisService?.port || registerConfig.port;
@@ -194,25 +188,29 @@ export default ({ consulOptions, logger }: { consulOptions: ConsulOptions, logge
           host: hostName,
           port: String(thisServicePort),
         },
-        check: { http: `http://${hostName}:${thisServicePort}/health` },
       });
+      if (!regOptions.check) {
+        regOptions.check = {};
+      }
+      const { http, script, shell, tcp } = regOptions.check;
+      if (!http && !script && !shell && !tcp) {
+        regOptions.check.http = `http://${hostName}:${thisServicePort}/health`;
+      }
 
       const isAlreadyRegistered = await this.checkIfServiceRegistered(serviceId);
-      if (force) {
+      if (isAlreadyRegistered && forceReRegister) {
         const isDeregister = await this.agentServiceDeregister(serviceId);
         if (isDeregister) {
           logger.info(`Previous registration of service '${serviceId}' removed from Consul`);
         }
       } else if (isAlreadyRegistered) {
-        if (isAlreadyRegistered) {
-          return true;
-        }
+        return true;
       }
       const isJustRegistered = await this.agentServiceRegister(regOptions);
       if (isJustRegistered) {
-        logger.info(`This Service '${serviceId}' is registered in Consul`);
+        logger.info(`Service '${serviceId}' is registered in Consul`);
       } else {
-        logger.error(`This service '${serviceId}' is NOT registered in Consul`);
+        logger.error(`Service '${serviceId}' is NOT registered in Consul`);
       }
     },
   };
