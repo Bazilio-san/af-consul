@@ -36,64 +36,52 @@ const registerOptions = {
 #### Usage example
 
 
-```js
-const config = require('config');
-const getConsulApi = require('af-consul');
-const logger = require('./logger');
+```ts
+import 'dotenv/config';
+import * as os from 'os';
+import { logger } from './logger';
+import getConsulApi, { ConsulAgentOptions, RegisterOptions } from '../src/index';
 
-const {
-  name, version, description, consul: {
-    agent: {
-      host, port, secure, token,
+const consulAgentOptions: ConsulAgentOptions = {
+    host: process.env.CONSUL_AGENT_HOST || os.hostname(),
+    port: process.env.CONSUL_AGENT_PORT || '8500',
+    secure: !!process.env.CONSUL_AGENT_SECURE,
+    defaults: { token: process.env.CONSUL_TOKEN },
+};
+
+const isProd = process.env.NODE_ENV === 'production';
+const contourType = isProd ? 'prd' : 'dev';
+const envCode = isProd ? 'CEPR01' : 'CEPE01';
+const instanceName = 'msk'; // Суффикс в имени consul-сервиса
+const serviceName = `${process.env.SERVICE_NAME || 'test-service'}-${instanceName}`;
+export const thisServiceId = `${contourType}-${envCode}-${serviceName}`.toLowerCase();
+
+const registerConfig: RegisterOptions = {
+    id: thisServiceId,
+    name: thisServiceId,
+    tags: ['test-service'],
+    meta: {
+        name: 'test-service',
+        version: '1.0.0',
+        description: 'test service',
     },
-  }, webServer,
-} = config;
-
-const consulOptions = {
-  host, port, secure,
-};
-if (token) {
-  consulOptions.defaults = { token };
-}
-
-const instanceName = '<instance_name>';
-const serviceName = `<this_service_name>`;
-const THIS_SERVICE_ID = '<this_service_id>'.toLowerCase();
-
-const registerConfig = {
-  id: THIS_SERVICE_ID,
-  name: THIS_SERVICE_ID,
-  tags: [name, version],
-  meta: {
-    name,
-    version,
-    description,
-    instance: instanceName,
-  },
-  port: webServer.port,
-  check: {
-    name: `Service '${serviceName}'`,
-    // http: `http://<host>:<port>/health`, // Устанавливается в registerThisService()
-    interval: '10s',
-    timeout: '5s',
-    deregistercriticalserviceafter: '3m',
-  },
+    port: Number(consulAgentOptions.port),
+    check: {
+        name: `Service '${serviceName}'`,
+        interval: '10s',
+        timeout: '5s',
+        deregistercriticalserviceafter: '3m',
+    },
 };
 
-const consulApi = getConsulApi({ consulOptions, logger });
+const consulApi = getConsulApi({ consulAgentOptions, logger });
 
-const registerThisService = async () => {
-  await consulApi.registerThisService({ registerConfig });
+export const registerService = async () => {
+    await consulApi.registerService({ registerConfig });
 };
 
-const deregister = async (serviceId = THIS_SERVICE_ID) => {
-  await consulApi.deregisterIfNeed(serviceId);
-};
-
-module.exports = {
-  registerThisService,
-  deregister,
-  THIS_SERVICE_ID,
+export const deregister = async (serviceId = thisServiceId) => {
+    await consulApi.deregisterIfNeed(serviceId);
 };
 
 ```

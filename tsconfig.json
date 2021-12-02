@@ -11,7 +11,6 @@
     "target": "es2019",
     "module": "commonjs",
     "types": [
-      "jest",
       "node"
     ],
     "moduleResolution": "node",
@@ -25,14 +24,12 @@
   },
   "include": [
     "src/*.ts",
-    "src/**/*.ts",
     "test/*.ts"
   ],
   "exclude": [
     "node_modules",
     "**/node_modules",
     "**/dist",
-    "**/test",
-    "*.test.ts"
+    "**/_misc"
   ]
 }
