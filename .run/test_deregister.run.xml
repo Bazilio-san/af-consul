@@ -6,7 +6,9 @@
       <script value="test:deregister" />
     </scripts>
     <node-interpreter value="project" />
-    <envs />
+    <envs>
+      <env name="DEBUG" value="af:consul" />
+    </envs>
     <method v="2" />
   </configuration>
 </component>

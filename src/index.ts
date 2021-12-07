@@ -49,6 +49,24 @@ abstract class AbstractConsulLogger {
   /* eslint-enable no-unused-vars */
 }
 
+// Returns fully qualified domain name
+export const getFQDN = (h?: string, withError?: boolean) => {
+  h = h || os.hostname();
+  return new Promise((resolve, reject) => {
+    dns.lookup(h as string, { hints: dns.ADDRCONFIG }, (err: any, ip: string) => {
+      if (err) {
+        return withError ? reject(err) : resolve(null);
+      }
+      dns.lookupService(ip, 0, (err2, hostname) => {
+        if (err2) {
+          return withError ? reject(err2) : resolve(null);
+        }
+        resolve(hostname);
+      });
+    });
+  });
+};
+
 export const getConsulApi = (
   {
     consulAgentOptions,
@@ -107,23 +125,6 @@ export const getConsulApi = (
   }
 
   return {
-    // Returns fully qualified domain name
-    getFQDN(h?: string, withError?: boolean) {
-      h = h || os.hostname();
-      return new Promise((resolve, reject) => {
-        dns.lookup(h as string, { hints: dns.ADDRCONFIG }, (err: any, ip: string) => {
-          if (err) {
-            return withError ? reject(err) : resolve(null);
-          }
-          dns.lookupService(ip, 0, (err2, hostname) => {
-            if (err2) {
-              return withError ? reject(err2) : resolve(null);
-            }
-            resolve(hostname);
-          });
-        });
-      });
-    },
     // Returns the services the agent is managing.  - список сервисов на этом агенте
     agentServiceList(withError: boolean = false) {
       return common('agent.service.list', { withError });
@@ -146,7 +147,7 @@ export const getConsulApi = (
       const [{ Node: { Node }, Service: { Address, Port } }] = result;
       const foundAddress = Address || Node;
 
-      const host = await this.getFQDN(foundAddress);
+      const host = await getFQDN(foundAddress);
       return {
         host: host || foundAddress,
         port: Port,
@@ -199,7 +200,7 @@ export const getConsulApi = (
 
       const thisServicePort = thisService?.port || registerConfig.port;
 
-      const hostName = process.env.HOST_HOSTNAME || thisService?.host || await this.getFQDN();
+      const hostName = process.env.HOST_HOSTNAME || thisService?.host || await getFQDN();
       const regOptions: IRegisterOptions = _.merge(_.cloneDeep(registerConfig), {
         port: thisServicePort,
         address: hostName,
