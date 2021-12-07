@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import * as os from 'os';
 import { logger } from './logger';
-import getConsulApi, { IConsulAgentOptions, IRegisterOptions } from '../src/index';
+import { IConsulAgentOptions, IRegisterOptions, getConsulApi } from '../src';
 
 const consulAgentOptions: IConsulAgentOptions = {
   host: process.env.CONSUL_AGENT_HOST || os.hostname(),

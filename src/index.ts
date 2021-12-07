@@ -41,10 +41,11 @@ abstract class AbstractConsulLogger {
   abstract info(...args: unknown[]): any;
 
   abstract error(...args: unknown[]): any;
+
   /* eslint-enable no-unused-vars */
 }
 
-export default (
+export const getConsulApi = (
   {
     consulAgentOptions,
     logger,
