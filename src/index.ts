@@ -232,6 +232,7 @@ export const getConsulApi = (
       } else {
         logger.error(`Service '${b}${serviceId}${r}' is NOT registered in Consul`);
       }
+      return isJustRegistered;
     },
   };
 };
