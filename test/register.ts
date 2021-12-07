@@ -1,3 +1,3 @@
-import { registerService } from './config';
+import { registerService } from './configure';
 
 registerService().then((r) => r);
