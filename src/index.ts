@@ -2,6 +2,9 @@ import * as os from 'os';
 import * as dns from 'dns';
 import * as Consul from 'consul';
 import * as _ from 'lodash';
+import Debug from 'debug';
+
+const debug = Debug('af:consul');
 
 export interface ISocketInfo {
   host: string;
@@ -34,10 +37,11 @@ export interface IServiceOptions {
 export interface IConsulAgentOptions extends Consul.ConsulOptions {
 }
 
+const r = '\x1b[0m';
+const b = '\x1b[34m';
+
 abstract class AbstractConsulLogger {
   /* eslint-disable no-unused-vars */
-  abstract silly(...args: unknown[]): any;
-
   abstract info(...args: unknown[]): any;
 
   abstract error(...args: unknown[]): any;
@@ -68,7 +72,7 @@ export const getConsulApi = (
     Object.entries(headers).forEach(([key, value]) => {
       msg += `\n${key}: ${value}`;
     });
-    logger.silly(msg);
+    debug(msg);
     next();
   });
 
@@ -178,13 +182,13 @@ export const getConsulApi = (
       if (isAlreadyRegistered) {
         const isDeregister = await this.agentServiceDeregister(serviceId);
         if (isDeregister) {
-          logger.info(`Previous registration of service '${serviceId}' removed from Consul`);
+          logger.info(`Previous registration of service '${b}${serviceId}${r}' removed from Consul`);
         } else {
-          logger.error(`Previous registration of service '${serviceId}' was NOT removed from Consul`);
+          logger.error(`Previous registration of service '${b}${serviceId}${r}' was NOT removed from Consul`);
           return false;
         }
       } else {
-        logger.info(`Service '${serviceId}' is not registered in Consul`);
+        logger.info(`Service '${b}${serviceId}${r}' is not registered in Consul`);
       }
       return true;
     },
@@ -217,16 +221,16 @@ export const getConsulApi = (
       if (isAlreadyRegistered && forceReRegister) {
         const isDeregister = await this.agentServiceDeregister(serviceId);
         if (isDeregister) {
-          logger.info(`Previous registration of service '${serviceId}' removed from Consul`);
+          logger.info(`Previous registration of service '${b}${serviceId}${r}' removed from Consul`);
         }
       } else if (isAlreadyRegistered) {
         return true;
       }
       const isJustRegistered = await this.agentServiceRegister(regOptions);
       if (isJustRegistered) {
-        logger.info(`Service '${serviceId}' is registered in Consul`);
+        logger.info(`Service '${b}${serviceId}${r}' is registered in Consul`);
       } else {
-        logger.error(`Service '${serviceId}' is NOT registered in Consul`);
+        logger.error(`Service '${b}${serviceId}${r}' is NOT registered in Consul`);
       }
     },
   };

@@ -1,6 +1,6 @@
 {
   "name": "af-consul",
-  "version": "1.0.19",
+  "version": "1.0.20",
   "description": "A highly specialized function library",
   "main": "./dist/cjs/src/index.js",
   "module": "./dist/esm/index.js",
@@ -11,6 +11,8 @@
     "node": ">=10"
   },
   "scripts": {
+    "test:register": "ts-node ./test/register.ts",
+    "test:deregister": "ts-node ./test/deregister.ts",
     "clean": "shx rm -rf dist/*",
     "build": "tsc -b tsconfig.json tsconfig.esm.json tsconfig.types.json",
     "eslint": "eslint . --ext .ts",
@@ -36,7 +38,9 @@
     "typescript": "^4.5.2"
   },
   "dependencies": {
+    "@types/debug": "^4.1.7",
     "consul": "^0.40.0",
+    "debug": "^4.3.3",
     "lodash": "^4.17.21"
   },
   "np": {
