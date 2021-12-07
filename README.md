@@ -40,9 +40,9 @@ const registerOptions = {
 import 'dotenv/config';
 import * as os from 'os';
 import { logger } from './logger';
-import getConsulApi, { ConsulAgentOptions, RegisterOptions } from '../src/index';
+import getConsulApi, { IConsulAgentOptions, IRegisterOptions } from '../src/index';
 
-const consulAgentOptions: ConsulAgentOptions = {
+const consulAgentOptions: IConsulAgentOptions = {
     host: process.env.CONSUL_AGENT_HOST || os.hostname(),
     port: process.env.CONSUL_AGENT_PORT || '8500',
     secure: !!process.env.CONSUL_AGENT_SECURE,
@@ -56,7 +56,7 @@ const instanceName = 'msk'; // Суффикс в имени consul-сервис�
 const serviceName = `${process.env.SERVICE_NAME || 'test-service'}-${instanceName}`;
 export const thisServiceId = `${contourType}-${envCode}-${serviceName}`.toLowerCase();
 
-const registerConfig: RegisterOptions = {
+const registerConfig: IRegisterOptions = {
     id: thisServiceId,
     name: thisServiceId,
     tags: ['test-service'],

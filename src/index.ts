@@ -3,12 +3,12 @@ import * as dns from 'dns';
 import * as Consul from 'consul';
 import * as _ from 'lodash';
 
-export interface SocketInfo {
+export interface ISocketInfo {
   host: string;
   port: string | number;
 }
 
-export interface RegisterCheck extends Consul.Agent.Service.RegisterCheck {
+export interface IRegisterCheck extends Consul.Agent.Service.RegisterCheck {
   name?: string;
   tcp?: string;
   dockercontainerid?: string;
@@ -17,24 +17,39 @@ export interface RegisterCheck extends Consul.Agent.Service.RegisterCheck {
   deregistercriticalserviceafter?: string;
 }
 
-export interface RegisterOptions extends Consul.Agent.Service.RegisterOptions {
-  check?: RegisterCheck | undefined;
-  checks?: RegisterCheck[] | undefined;
+export interface IRegisterOptions extends Consul.Agent.Service.RegisterOptions {
+  check?: IRegisterCheck | undefined;
+  checks?: IRegisterCheck[] | undefined;
   connect?: any;
   proxy?: any;
   taggedAddresses?: any;
 }
 
-export interface ServiceOptions {
-  registerConfig: RegisterOptions;
+export interface IServiceOptions {
+  registerConfig: IRegisterOptions;
   thisService?: { host?: string; port?: string | number };
   forceReRegister?: boolean;
 }
 
-export interface ConsulAgentOptions extends Consul.ConsulOptions {
+export interface IConsulAgentOptions extends Consul.ConsulOptions {
 }
 
-export default ({ consulAgentOptions, logger }: { consulAgentOptions: ConsulAgentOptions; logger?: any }) => {
+abstract class AbstractConsulLogger {
+  /* eslint-disable no-unused-vars */
+  abstract silly(...args: unknown[]): any;
+
+  abstract info(...args: unknown[]): any;
+
+  abstract error(...args: unknown[]): any;
+  /* eslint-enable no-unused-vars */
+}
+
+export default (
+  {
+    consulAgentOptions,
+    logger,
+  }: { consulAgentOptions: IConsulAgentOptions; logger?: AbstractConsulLogger | any },
+) => {
   const consulInstance = Consul(consulAgentOptions); // { host, port, secure, defaults: { token } }
 
   if (!logger?.info) {
@@ -114,7 +129,7 @@ export default ({ consulAgentOptions, logger }: { consulAgentOptions: ConsulAgen
       return common('health.service', { options, withError });
     },
 
-    async getServiceSocket(serviceName: string, defaults: SocketInfo): Promise<SocketInfo> {
+    async getServiceSocket(serviceName: string, defaults: ISocketInfo): Promise<ISocketInfo> {
       if (process.env.USE_DEFAULT_SERVICE_SOCKET) {
         return defaults;
       }
@@ -134,7 +149,7 @@ export default ({ consulAgentOptions, logger }: { consulAgentOptions: ConsulAgen
     },
 
     // Registers a new service.
-    agentServiceRegister(options: RegisterOptions, withError: boolean = false) {
+    agentServiceRegister(options: IRegisterOptions, withError: boolean = false) {
       return common('agent.service.register', {
         options, withError, result: true,
       });
@@ -173,14 +188,14 @@ export default ({ consulAgentOptions, logger }: { consulAgentOptions: ConsulAgen
       return true;
     },
 
-    async registerService(options: ServiceOptions) {
+    async registerService(options: IServiceOptions) {
       const { registerConfig, thisService, forceReRegister = true } = options;
       const serviceId = registerConfig.id || registerConfig.name;
 
       const thisServicePort = thisService?.port || registerConfig.port;
 
       const hostName = process.env.HOST_HOSTNAME || thisService?.host || await this.getFQDN();
-      const regOptions: RegisterOptions = _.merge(_.cloneDeep(registerConfig), {
+      const regOptions: IRegisterOptions = _.merge(_.cloneDeep(registerConfig), {
         port: thisServicePort,
         address: hostName,
         meta: {
