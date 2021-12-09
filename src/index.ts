@@ -38,7 +38,8 @@ export interface IConsulAgentOptions extends Consul.ConsulOptions {
 }
 
 const r = '\x1b[0m';
-const b = '\x1b[34m';
+const cy = '\x1b[36m';
+const g = '\x1b[32m';
 
 abstract class AbstractConsulLogger {
   /* eslint-disable no-unused-vars */
@@ -183,13 +184,13 @@ export const getConsulApi = (
       if (isAlreadyRegistered) {
         const isDeregister = await this.agentServiceDeregister(serviceId);
         if (isDeregister) {
-          logger.info(`Previous registration of service '${b}${serviceId}${r}' removed from Consul`);
+          logger.info(`Previous registration of service '${cy}${serviceId}${r}' removed from Consul`);
         } else {
-          logger.error(`Previous registration of service '${b}${serviceId}${r}' was NOT removed from Consul`);
+          logger.error(`Previous registration of service '${cy}${serviceId}${r}' was NOT removed from Consul`);
           return false;
         }
       } else {
-        logger.info(`Service '${b}${serviceId}${r}' is not registered in Consul`);
+        logger.info(`Service '${cy}${serviceId}${r}' is not registered in Consul`);
       }
       return true;
     },
@@ -222,16 +223,16 @@ export const getConsulApi = (
       if (isAlreadyRegistered && forceReRegister) {
         const isDeregister = await this.agentServiceDeregister(serviceId);
         if (isDeregister) {
-          logger.info(`Previous registration of service '${b}${serviceId}${r}' removed from Consul`);
+          logger.info(`Previous registration of service '${cy}${serviceId}${r}' removed from Consul`);
         }
       } else if (isAlreadyRegistered) {
         return true;
       }
       const isJustRegistered = await this.agentServiceRegister(regOptions);
       if (isJustRegistered) {
-        logger.info(`Service '${b}${serviceId}${r}' is registered in Consul`);
+        logger.info(`Service '${cy}${serviceId}${r}' is registered in Consul`);
       } else {
-        logger.error(`Service '${b}${serviceId}${r}' is NOT registered in Consul`);
+        logger.error(`Service '${cy}${serviceId}${r}' is NOT registered in Consul`);
       }
       return isJustRegistered;
     },
