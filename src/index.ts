@@ -45,7 +45,11 @@ const cy = '\x1b[36m';
 
 abstract class AbstractConsulLogger {
   /* eslint-disable no-unused-vars */
+  abstract silly(...args: unknown[]): any;
+
   abstract info(...args: unknown[]): any;
+
+  abstract warn(...args: unknown[]): any;
 
   abstract error(...args: unknown[]): any;
 
@@ -82,7 +86,7 @@ export const getConsulApi = (
     logger = {
       silly: console.log,
       info: console.log,
-      warning: console.log,
+      warn: console.log,
       error: console.log,
     };
   }
@@ -161,7 +165,7 @@ export const getConsulApi = (
         passing: true,
       });
       if (!result || !result.length) {
-        logger.warning(`CONSUL: No working service found: ${cy}${serviceName}${r}. Return defaults ${defaults.host}:${defaults.port}`);
+        logger.warn(`CONSUL: No working service found: ${cy}${serviceName}${r}. Return defaults ${defaults.host}:${defaults.port}`);
         return defaults;
       }
       const [{
