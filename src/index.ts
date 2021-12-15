@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import * as os from 'os';
 import * as dns from 'dns';
 import * as Consul from 'consul';
@@ -39,6 +40,7 @@ export interface IConsulAgentOptions extends Consul.ConsulOptions {
 
 const r = '\x1b[0m';
 const cy = '\x1b[36m';
+
 // const g = '\x1b[32m';
 
 abstract class AbstractConsulLogger {
@@ -78,19 +80,30 @@ export const getConsulApi = (
 
   if (!logger?.info) {
     logger = {
-      // eslint-disable-next-line no-console
-      info: console.log, error: console.log, silly: console.log,
+      silly: console.log,
+      info: console.log,
+      warning: console.log,
+      error: console.log,
     };
   }
 
   // @ts-ignore
   consulInstance._ext('onRequest', (request, next) => {
-    const { req: { hostname, port, path, method, headers } } = request;
+    const {
+      req: {
+        hostname,
+        port,
+        path,
+        method,
+        headers,
+      },
+    } = request;
     const { secure } = consulAgentOptions;
     let msg = `${method} http${secure ? 's' : ''}://${hostname}${port ? `:${port}` : ''}${path}`;
-    Object.entries(headers).forEach(([key, value]) => {
-      msg += `\n${key}: ${value}`;
-    });
+    Object.entries(headers)
+      .forEach(([key, value]) => {
+        msg += `\n${key}: ${value}`;
+      });
     debug(msg);
     next();
   });
@@ -133,19 +146,31 @@ export const getConsulApi = (
 
     // Returns the nodes and health info of a service
     consulHealthService(options: Consul.Health.ServiceOptions, withError: boolean = false) {
-      return common('health.service', { options, withError });
+      return common('health.service', {
+        options,
+        withError,
+      });
     },
 
     async getServiceSocket(serviceName: string, defaults: ISocketInfo): Promise<ISocketInfo> {
       if (process.env.USE_DEFAULT_SERVICE_SOCKET) {
         return defaults;
       }
-      const result = await this.consulHealthService({ service: serviceName, passing: true });
+      const result = await this.consulHealthService({
+        service: serviceName,
+        passing: true,
+      });
       if (!result || !result.length) {
         logger.warning(`CONSUL: No working service found: ${cy}${serviceName}${r}. Return defaults ${defaults.host}:${defaults.port}`);
         return defaults;
       }
-      const [{ Node: { Node }, Service: { Address, Port } }] = result;
+      const [{
+        Node: { Node },
+        Service: {
+          Address,
+          Port,
+        },
+      }] = result;
       const foundAddress = Address || Node;
 
       const host = await getFQDN(foundAddress);
@@ -158,14 +183,18 @@ export const getConsulApi = (
     // Registers a new service.
     agentServiceRegister(options: IRegisterOptions, withError: boolean = false) {
       return common('agent.service.register', {
-        options, withError, result: true,
+        options,
+        withError,
+        result: true,
       });
     },
 
     // Deregister a service.
     agentServiceDeregister(serviceId: string, withError: boolean = false) {
       return common('agent.service.deregister', {
-        options: serviceId, withError, result: true,
+        options: serviceId,
+        withError,
+        result: true,
       });
     },
 
@@ -176,7 +205,10 @@ export const getConsulApi = (
       const agentServiceListR = await this.agentServiceList();
       return agentServiceListR
         && Object.values(agentServiceListR)
-          .some(({ ID: i, Service: s }: any) => i === svcIdOrName || s === svcIdOrName);
+          .some(({
+            ID: i,
+            Service: s,
+          }: any) => i === svcIdOrName || s === svcIdOrName);
     },
 
     async deregisterIfNeed(serviceId: string) {
@@ -196,7 +228,11 @@ export const getConsulApi = (
     },
 
     async registerService(options: IServiceOptions) {
-      const { registerConfig, thisService, forceReRegister = true } = options;
+      const {
+        registerConfig,
+        thisService,
+        forceReRegister = true,
+      } = options;
       const serviceId = registerConfig.id || registerConfig.name;
 
       const thisServicePort = thisService?.port || registerConfig.port;
@@ -214,7 +250,12 @@ export const getConsulApi = (
       if (!regOptions.check) {
         regOptions.check = {};
       }
-      const { http, script, shell, tcp } = regOptions.check;
+      const {
+        http,
+        script,
+        shell,
+        tcp,
+      } = regOptions.check;
       if (!http && !script && !shell && !tcp) {
         regOptions.check.http = `http://${hostName}:${thisServicePort}/health`;
       }
