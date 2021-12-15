@@ -39,7 +39,7 @@ export interface IConsulAgentOptions extends Consul.ConsulOptions {
 
 const r = '\x1b[0m';
 const cy = '\x1b[36m';
-const g = '\x1b[32m';
+// const g = '\x1b[32m';
 
 abstract class AbstractConsulLogger {
   /* eslint-disable no-unused-vars */
@@ -142,7 +142,7 @@ export const getConsulApi = (
       }
       const result = await this.consulHealthService({ service: serviceName, passing: true });
       if (!result || !result.length) {
-        logger.error(`consul.health.service ERROR: no working service found: ${serviceName}`);
+        logger.warning(`CONSUL: No working service found: ${cy}${serviceName}${r}. Return defaults ${defaults.host}:${defaults.port}`);
         return defaults;
       }
       const [{ Node: { Node }, Service: { Address, Port } }] = result;
