@@ -39,7 +39,7 @@ export interface IConsulAgentOptions extends Consul.ConsulOptions {
 
 const r = '\x1b[0m';
 const cy = '\x1b[36m';
-const g = '\x1b[32m';
+// const g = '\x1b[32m';
 
 abstract class AbstractConsulLogger {
   /* eslint-disable no-unused-vars */
@@ -85,13 +85,24 @@ export const getConsulApi = (
 
   // @ts-ignore
   consulInstance._ext('onRequest', (request, next) => {
-    const { req: { hostname, port, path, method, headers } } = request;
-    const { secure } = consulAgentOptions;
-    let msg = `${method} http${secure ? 's' : ''}://${hostname}${port ? `:${port}` : ''}${path}`;
-    Object.entries(headers).forEach(([key, value]) => {
-      msg += `\n${key}: ${value}`;
-    });
-    debug(msg);
+    if (debug.enabled) {
+      const { req: { hostname, port, path, method, headers }, body } = request;
+      const { secure } = consulAgentOptions;
+      let msg = `${method} http${secure ? 's' : ''}://${hostname}${port ? `:${port}` : ''}${path}`;
+      Object.entries(headers).forEach(([key, value]) => {
+        msg += `\n${key}: ${value}`;
+      });
+      if ((method === 'POST' || method === 'PUT') && body) {
+        try {
+          msg += '\n================== BODY START ==================';
+          msg += `\n${JSON.stringify(JSON.parse(body.toString()), undefined, 2)}`;
+          msg += '\n================== BODY END ====================';
+        } catch (err) {
+          //
+        }
+      }
+      debug(msg);
+    }
     next();
   });
 
