@@ -114,8 +114,8 @@ export const getConsulApi = (
           msg += '\n================== BODY START ==================';
           msg += `\n${JSON.stringify(JSON.parse(body.toString()), undefined, 2)}`;
           msg += '\n================== BODY END ====================';
-        } catch (err) {
-          //
+        } catch (err: Error | any) {
+          logger.error(`ERROR (onRequest): \n  err.message: ${err.message}\n  err.stack:\n${err.stack}\n`);
         }
       }
       debug(msg);
@@ -167,8 +167,8 @@ export const getConsulApi = (
       try {
         // eslint-disable-next-line prefer-spread
         fn[method].apply(fn, args);
-      } catch (err) {
-        logger.error(err);
+      } catch (err: Error | any) {
+        logger.error(`ERROR (common): \n  err.message: ${err.message}\n  err.stack:\n${err.stack}\n`);
       }
     });
   }
