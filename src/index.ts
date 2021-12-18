@@ -200,7 +200,6 @@ export const getConsulApi = (
         port: Port,
       };
     },
-
     // Registers a new service.
     agentServiceRegister(options: IRegisterOptions, withError: boolean = false) {
       return common('agent.service.register', {
