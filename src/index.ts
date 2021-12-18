@@ -253,7 +253,7 @@ export const getConsulApi = (
 
       const thisServicePort = thisService?.port || registerConfig.port;
 
-      const hostName = process.env.HOST_NAME_FOR_CONSUL || thisService?.host || await getFQDN();
+      const hostName = process.env.HOST_HOSTNAME || thisService?.host || await getFQDN();
       const regOptions: IRegisterOptions = _.merge(_.cloneDeep(registerConfig), {
         port: thisServicePort,
         address: hostName,
