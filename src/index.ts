@@ -136,7 +136,7 @@ export const getConsulApi = (
         }
       }
     } catch (err) {
-      //
+      //+
     }
     next();
   });
