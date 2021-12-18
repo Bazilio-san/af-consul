@@ -116,7 +116,8 @@ export const getConsulApi = (
   });
   // @ts-ignore
   consulInstance._ext('onResponse', (request, next) => {
-    const { res: { statusCode = 0, body = null } = {} } = request || {};
+    const { res } = request || {};
+    const { statusCode = 0, body = null } = res || {};
     if (statusCode > 299 && body) {
       logger.error(body);
     }
