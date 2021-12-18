@@ -129,14 +129,15 @@ export const getConsulApi = (
       const { statusCode = 0, body = null } = res || {};
       debug(`Status code: ${statusCode}`);
       if (statusCode > 299) {
+        const serviceName = request._args?.[0]?.name ?? '';
         if (body) {
-          logger.error(body);
+          logger.error(`[${serviceName ? `consul.${serviceName}` : 'CONSUL'}] ERROR: ${JSON.stringify(body)}`);
         } else {
           debug(`res.body not found! res: ${res}`);
         }
       }
-    } catch (err) {
-      //+
+    } catch (err: Error | any) {
+      logger.error(`ERROR (onResponse): \n  err.message: ${err.message}\n  err.stack:\n${err.stack}\n`);
     }
     next();
   });
@@ -151,8 +152,7 @@ export const getConsulApi = (
     return new Promise((resolve, reject) => {
       const callback = (err: Error | any, res: any) => {
         if (err) {
-          err.message = `consul.${fnName} ERROR: ${err.message}`;
-          logger.error(err);
+          logger.error(`[consul.${fnName}] ERROR:\n  err.message: ${err.message}\n  err.stack:\n${err.stack}\n`);
           return withError ? reject(err) : resolve(false);
         }
         resolve(result || res);
