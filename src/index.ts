@@ -275,7 +275,7 @@ export const getConsulApi = (
       if (!http && !script && !shell && !tcp) {
         regOptions.check.http = `http://${hostName}:${thisServicePort}/health`;
       }
-      options.registerConfig = regOptions;
+      Object.assign(options.registerConfig, regOptions);
       const isAlreadyRegistered = await this.checkIfServiceRegistered(serviceId);
       if (isAlreadyRegistered && forceReRegister) {
         const isDeregister = await this.agentServiceDeregister(serviceId);
