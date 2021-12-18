@@ -94,12 +94,22 @@ export const getConsulApi = (
   // @ts-ignore
   consulInstance._ext('onRequest', (request, next) => {
     if (debug.enabled) {
-      const { req: { hostname, port, path, method, headers }, body } = request;
+      const {
+        req: {
+          hostname,
+          port,
+          path,
+          method,
+          headers,
+        },
+        body,
+      } = request;
       const { secure } = consulAgentOptions;
       let msg = `${method} http${secure ? 's' : ''}://${hostname}${port ? `:${port}` : ''}${path}`;
-      Object.entries(headers).forEach(([key, value]) => {
-        msg += `\n${key}: ${value}`;
-      });
+      Object.entries(headers)
+        .forEach(([key, value]) => {
+          msg += `\n${key}: ${value}`;
+        });
       if ((method === 'POST' || method === 'PUT') && body) {
         try {
           msg += '\n================== BODY START ==================';
