@@ -116,8 +116,9 @@ export const getConsulApi = (
   });
   // @ts-ignore
   consulInstance._ext('onResponse', (request, next) => {
-    if (request.res.statusCode > 299) {
-      logger.error(request.res.body);
+    const { res: { statusCode = 0, body = null } = {} } = request || {};
+    if (statusCode > 299 && body) {
+      logger.error(body);
     }
     next();
   });
@@ -221,10 +222,7 @@ export const getConsulApi = (
       const agentServiceListR = await this.agentServiceList();
       return agentServiceListR
         && Object.values(agentServiceListR)
-          .some(({
-            ID: i,
-            Service: s,
-          }: any) => i === svcIdOrName || s === svcIdOrName);
+          .some(({ ID: i, Service: s }: any) => i === svcIdOrName || s === svcIdOrName);
     },
 
     async deregisterIfNeed(serviceId: string) {
