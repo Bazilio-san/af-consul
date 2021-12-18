@@ -250,31 +250,28 @@ export const getConsulApi = (
       } = options;
       const serviceId = registerConfig.id || registerConfig.name;
 
-      const thisServicePort = thisService?.port || registerConfig.port;
+      const port = registerConfig.port || Number(thisService?.port);
+      const address = registerConfig.address || (process.env.HOST_HOSTNAME || thisService?.host || await getFQDN());
 
-      const hostName = process.env.HOST_HOSTNAME || thisService?.host || await getFQDN();
       const regOptions: IRegisterOptions = _.merge(_.cloneDeep(registerConfig), {
-        port: Number(thisServicePort),
-        address: hostName,
+        port,
+        address,
         meta: {
           env: process.env.NODE_ENV,
-          host: hostName,
-          port: String(thisServicePort),
+          host: address,
+          port: String(registerConfig?.meta?.port || port),
         },
       });
       if (!regOptions.check) {
         regOptions.check = {};
       }
-      const {
-        http,
-        script,
-        shell,
-        tcp,
-      } = regOptions.check;
+      const { http, script, shell, tcp } = regOptions.check;
       if (!http && !script && !shell && !tcp) {
-        regOptions.check.http = `http://${hostName}:${thisServicePort}/health`;
+        regOptions.check.http = `http://${address}:${port}/health`;
       }
+
       Object.assign(options.registerConfig, regOptions);
+
       const isAlreadyRegistered = await this.checkIfServiceRegistered(serviceId);
       if (isAlreadyRegistered && forceReRegister) {
         const isDeregister = await this.agentServiceDeregister(serviceId);
