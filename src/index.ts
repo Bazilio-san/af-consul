@@ -83,6 +83,11 @@ export const getConsulApi = (
   if (debug.enabled) {
     debug(`============= consulAgentOptions: =================\n${JSON.stringify(consulAgentOptions, undefined, 2)}`);
   }
+  const numericPort = Number(consulAgentOptions.port);
+  if (!numericPort) {
+    throw new Error(`The port for consul agent is invalid: [${consulAgentOptions.port}]`);
+  }
+  consulAgentOptions.port = String(numericPort);
   const consulInstance = Consul(consulAgentOptions); // { host, port, secure, defaults: { token } }
 
   if (!logger?.info) {
@@ -119,10 +124,19 @@ export const getConsulApi = (
   });
   // @ts-ignore
   consulInstance._ext('onResponse', (request, next) => {
-    const { res } = request || {};
-    const { statusCode = 0, body = null } = res || {};
-    if (statusCode > 299 && body) {
-      logger.error(body);
+    try {
+      const { res } = request || {};
+      const { statusCode = 0, body = null } = res || {};
+      debug(`Status code: ${statusCode}`);
+      if (statusCode > 299) {
+        if (body) {
+          logger.error(body);
+        } else {
+          debug(`res.body not found! res: ${res}`);
+        }
+      }
+    } catch (err) {
+      //
     }
     next();
   });
