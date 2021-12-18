@@ -253,11 +253,11 @@ export const getConsulApi = (
       } = options;
       const serviceId = registerConfig.id || registerConfig.name;
 
-      const port = registerConfig.port || Number(thisService?.port);
+      const port = registerConfig.port || thisService?.port;
       const address = registerConfig.address || (process.env.HOST_HOSTNAME || thisService?.host || await getFQDN());
 
       const regOptions: IRegisterOptions = _.merge(_.cloneDeep(registerConfig), {
-        port,
+        port: Number(port),
         address,
         meta: {
           env: process.env.NODE_ENV,
