@@ -80,6 +80,9 @@ export const getConsulApi = (
     logger,
   }: { consulAgentOptions: IConsulAgentOptions; logger?: AbstractConsulLogger | any },
 ) => {
+  if (debug.enabled) {
+    debug(`============= consulAgentOptions: =================\n${JSON.stringify(consulAgentOptions, undefined, 2)}`);
+  }
   const consulInstance = Consul(consulAgentOptions); // { host, port, secure, defaults: { token } }
 
   if (!logger?.info) {
