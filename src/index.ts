@@ -264,7 +264,7 @@ export const getConsulApi = (
 
       const isAlreadyRegistered = await this.checkIfServiceRegistered(serviceId);
       if (isAlreadyRegistered && !forceReRegister) {
-        return true;
+        return 2;
       }
 
       const port = registerConfig.port || thisService?.port;
@@ -299,7 +299,7 @@ export const getConsulApi = (
       } else {
         logger.error(`Service '${cy}${serviceId}${r}' is NOT registered in Consul`);
       }
-      return isJustRegistered;
+      return isJustRegistered ? 1 : 0;
     },
   };
 };
