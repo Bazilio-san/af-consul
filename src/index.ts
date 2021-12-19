@@ -235,11 +235,11 @@ export const getConsulApi = (
     // Returns the members as seen by the consul agent. - список агентов (нод)
     agentMembers: (withError: boolean = false) => common('agent.members', { withError }),
 
-    async checkIfServiceRegistered(svcIdOrName: string): Promise<boolean> {
+    async checkIfServiceRegistered(serviceIdOrName: string): Promise<boolean> {
       const agentServiceListR = await this.agentServiceList();
       return agentServiceListR
         && Object.values(agentServiceListR)
-          .some(({ ID: i, Service: s }: any) => i === svcIdOrName || s === svcIdOrName);
+          .some(({ ID: i, Service: s }: any) => i === serviceIdOrName || s === serviceIdOrName);
     },
 
     async deregisterIfNeed(serviceId: string) {
@@ -259,12 +259,13 @@ export const getConsulApi = (
     },
 
     async registerService(options: IServiceOptions) {
-      const {
-        registerConfig,
-        thisService,
-        forceReRegister = true,
-      } = options;
+      const { registerConfig, thisService, forceReRegister = true } = options;
       const serviceId = registerConfig.id || registerConfig.name;
+
+      const isAlreadyRegistered = await this.checkIfServiceRegistered(serviceId);
+      if (isAlreadyRegistered && !forceReRegister) {
+        return true;
+      }
 
       const port = registerConfig.port || thisService?.port;
       const address = registerConfig.address || (process.env.HOST_HOSTNAME || thisService?.host || await getFQDN());
@@ -288,15 +289,10 @@ export const getConsulApi = (
 
       Object.assign(options.registerConfig, regOptions);
 
-      const isAlreadyRegistered = await this.checkIfServiceRegistered(serviceId);
-      if (isAlreadyRegistered && forceReRegister) {
-        const isDeregister = await this.agentServiceDeregister(serviceId);
-        if (isDeregister) {
-          logger.info(`Previous registration of service '${cy}${serviceId}${r}' removed from Consul`);
-        }
-      } else if (isAlreadyRegistered) {
-        return true;
+      if (isAlreadyRegistered && (await this.agentServiceDeregister(serviceId))) {
+        logger.info(`Previous registration of service '${cy}${serviceId}${r}' removed from Consul`);
       }
+
       const isJustRegistered = await this.agentServiceRegister(regOptions);
       if (isJustRegistered) {
         logger.info(`Service '${cy}${serviceId}${r}' is registered in Consul`);
