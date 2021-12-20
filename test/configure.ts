@@ -11,11 +11,9 @@ const consulAgentOptions: IConsulAgentOptions = {
 };
 
 const isProd = process.env.NODE_ENV === 'production';
-const contourType = isProd ? 'prd' : 'dev';
-const envCode = isProd ? 'CEPR01' : 'CEPE01';
-const instanceName = 'msk'; // Суффикс в имени consul-сервиса
-const serviceName = `${process.env.SERVICE_NAME || 'test-service'}-${instanceName}`;
-export const thisServiceId = `${contourType}-${envCode}-${serviceName}`.toLowerCase();
+const instance = 'msk'; // Суффикс в имени consul-сервиса
+const serviceNS = `${process.env.SERVICE_NAME || 'test-service'}-${instance}`;
+export const thisServiceId = `${isProd ? 'prd' : 'dev'}-${isProd ? 'cepr01' : 'cep'}-${serviceNS}`.toLowerCase();
 
 const registerConfig: IRegisterOptions = {
   id: thisServiceId,
@@ -28,7 +26,7 @@ const registerConfig: IRegisterOptions = {
   },
   port: Number(consulAgentOptions.port),
   check: {
-    name: `Service '${serviceName}'`,
+    name: `Service '${serviceNS}'`,
     interval: '10s',
     timeout: '5s',
     deregistercriticalserviceafter: '3m',
