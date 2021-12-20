@@ -1,4 +1,5 @@
-import { deregister, thisServiceId } from './configure';
+import initConsulAgent from './init-consul-agent';
 
-const serviceId = process.argv[2] || thisServiceId;
-deregister(serviceId).then((r) => r);
+initConsulAgent().then(({ deregister }) => {
+  deregister(process.argv[2]).then(() => null);
+});

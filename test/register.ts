@@ -1,3 +1,5 @@
-import { registerService } from './configure';
+import initConsulAgent from './init-consul-agent';
 
-registerService().then((r) => r);
+initConsulAgent().then(({ registerService }) => {
+  registerService().then(() => null);
+});
