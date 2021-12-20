@@ -52,7 +52,7 @@ const consulAgentOptions: IConsulAgentOptions = {
 const isProd = process.env.NODE_ENV === 'production';
 const instance = 'msk'; // Суффикс в имени consul-сервиса
 const serviceNS = `${process.env.SERVICE_NAME || 'test-service'}-${instance}`;
-export const thisServiceId = `${isProd ? 'prd' : 'dev'}-${isProd ? 'cepr01' : 'cep'}-${serviceNS}`.toLowerCase();
+export const thisServiceId = `${isProd ? 'prd' : 'dev'}-${isProd ? 'cepr01' : 'cepe01'}-${serviceNS}`.toLowerCase();
 
 const registerConfig: IRegisterOptions = {
     id: thisServiceId,
