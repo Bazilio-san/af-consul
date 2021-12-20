@@ -1,6 +1,6 @@
 {
   "name": "af-consul",
-  "version": "1.0.56",
+  "version": "1.0.57",
   "description": "A highly specialized function library",
   "main": "./dist/cjs/src/index.js",
   "module": "./dist/esm/index.js",
