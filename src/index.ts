@@ -301,5 +301,15 @@ export const getConsulApi = (
       }
       return isJustRegistered ? 1 : 0;
     },
+
+    getServiceID(name: string, instance: string, dn: string, uiHost: string) {
+      const p = process.env.NODE_ENV === 'production';
+      const ns = `${name}-${instance}`;
+      const id = `${p ? 'prd' : 'dev'}-${dn}${p ? 'r' : 'e'}01-${ns}`.toLowerCase();
+      const ui = `https://${uiHost}/ui/dc-${p ? 'msk-infra' : 'dev'}/services/${id}/instances`;
+      return {
+        ui, ns, id,
+      };
+    },
   };
 };
