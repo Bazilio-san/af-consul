@@ -2,7 +2,6 @@
 import * as os from 'os';
 import * as dns from 'dns';
 import * as Consul from 'consul';
-import * as _ from 'lodash';
 import Debug from 'debug';
 import { parseBoolean, parseMeta, parseTags, removeAroundQuotas } from './utils';
 
@@ -32,7 +31,6 @@ export interface IRegisterOptions extends Consul.Agent.Service.RegisterOptions {
 
 export interface IServiceOptions {
   registerConfig: IRegisterOptions;
-  thisService?: { host?: string; port?: string | number };
   forceReRegister?: boolean;
 }
 
@@ -270,41 +268,17 @@ export const getConsulApi = (
     },
 
     async registerService(options: IServiceOptions) {
-      const { registerConfig, thisService, forceReRegister = true } = options;
+      const { registerConfig, forceReRegister = true } = options;
       const serviceId = registerConfig.id || registerConfig.name;
 
       const isAlreadyRegistered = await this.checkIfServiceRegistered(serviceId);
       if (isAlreadyRegistered && !forceReRegister) {
         return 2;
       }
-
-      const port = registerConfig.port || thisService?.port;
-      const address = registerConfig.address || (process.env.HOST_HOSTNAME || thisService?.host || await getFQDN());
-
-      const regOptions: IRegisterOptions = _.merge(_.cloneDeep(registerConfig), {
-        port: Number(port),
-        address,
-        meta: {
-          env: process.env.NODE_ENV,
-          host: address,
-          port: String(registerConfig?.meta?.port || port),
-        },
-      });
-      if (!regOptions.check) {
-        regOptions.check = {};
-      }
-      const { http, script, shell, tcp } = regOptions.check;
-      if (!http && !script && !shell && !tcp) {
-        regOptions.check.http = `http://${address}:${port}/health`;
-      }
-
-      Object.assign(options.registerConfig, regOptions);
-
       if (isAlreadyRegistered && (await this.agentServiceDeregister(serviceId))) {
         logger.info(`Previous registration of service '${cy}${serviceId}${r}' removed from Consul`);
       }
-
-      const isJustRegistered = await this.agentServiceRegister(regOptions);
+      const isJustRegistered = await this.agentServiceRegister(registerConfig);
       if (isJustRegistered) {
         logger.info(`Service '${cy}${serviceId}${r}' is registered in Consul`);
       } else {
@@ -362,12 +336,13 @@ export const getRegisterConfig = async (options: { config: any, uiHost: string, 
     port: Number(port),
     address,
   };
+  const { interval = '10s', timeout = '5s', deregistercriticalserviceafter = '3m' } = config.consul?.healthCheck ?? {};
   registerConfig.check = options.check || {
     name: `Service '${serviceNS}'`,
     http: `http://${address}:${port}/health`,
-    interval: '10s',
-    timeout: '5s',
-    deregistercriticalserviceafter: '3m',
+    interval,
+    timeout,
+    deregistercriticalserviceafter,
   };
 
   return {
