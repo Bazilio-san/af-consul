@@ -4,8 +4,8 @@
 
 ```js
 const registerOptions = {
-    name: 'serviceName',       // (String): service name
-    id: 'serviceID',           // (String, optional): service ID
+    name: 'service name',       // (String): service name
+    id: 'service ID',           // (String, optional): service ID
     tags: ['tag1'],            // (String[], optional): service tags
     address: '0.0.0.0',        // (String, optional): service IP address
     port: 9602,                // (Integer, optional): service port
@@ -51,8 +51,8 @@ const consulAgentOptions: IConsulAgentOptions = {
 
 const isProd = process.env.NODE_ENV === 'production';
 const instance = 'msk'; // Суффикс в имени consul-сервиса
-const serviceName = `${process.env.SERVICE_NAME || 'test-service'}-${instance}`;
-export const thisServiceId = `${isProd ? 'prd' : 'dev'}-${isProd ? 'cepr01' : 'cep'}-${serviceName}`.toLowerCase();
+const serviceNS = `${process.env.SERVICE_NAME || 'test-service'}-${instance}`;
+export const thisServiceId = `${isProd ? 'prd' : 'dev'}-${isProd ? 'cepr01' : 'cep'}-${serviceNS}`.toLowerCase();
 
 const registerConfig: IRegisterOptions = {
     id: thisServiceId,
@@ -65,7 +65,7 @@ const registerConfig: IRegisterOptions = {
     },
     port: Number(consulAgentOptions.port),
     check: {
-        name: `Service '${serviceName}'`,
+        name: `Service '${serviceNS}'`,
         interval: '10s',
         timeout: '5s',
         deregistercriticalserviceafter: '3m',
