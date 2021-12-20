@@ -5,7 +5,8 @@ import * as Consul from 'consul';
 import Debug from 'debug';
 import { parseBoolean, parseMeta, parseTags, removeAroundQuotas } from './utils';
 
-const debug = Debug('af:consul');
+const prefix = 'af:consul';
+const debug = Debug(prefix);
 
 export interface ISocketInfo {
   host: string;
@@ -307,17 +308,24 @@ export const getRegisterConfig = async (options: { config: any, uiHost: string, 
   const { config, uiHost, dn } = options;
   const { webServer } = config;
   // eslint-disable-next-line prefer-const
-  let { name, instance, version, description, tags, meta, host, port = webServer.port } = config?.consul?.service ?? {};
+  let { name, instance, version, description, tags, meta, host, port } = config?.consul?.service ?? {};
   name = removeAroundQuotas(name);
   instance = removeAroundQuotas(instance);
   version = removeAroundQuotas(version);
   description = removeAroundQuotas(description);
   tags = parseTags(tags);
   meta = parseMeta(meta);
+  port = Number(port) || Number(webServer.port);
+  if (!port) {
+    throw new Error(`${prefix}: Port is empty!`);
+  }
 
   const { ui: consulUI, ns: serviceNS, id } = getServiceID(name, instance, dn, uiHost);
 
   const address = host || (await getFQDN());
+  if (!address) {
+    throw new Error(`${prefix}: Address is empty!`);
+  }
 
   const registerConfig: IRegisterOptions = {
     id,
@@ -333,7 +341,7 @@ export const getRegisterConfig = async (options: { config: any, uiHost: string, 
       NODE_ENV: process.env.NODE_ENV,
       ...(meta),
     },
-    port: Number(port),
+    port,
     address,
   };
   const { interval = '10s', timeout = '5s', deregistercriticalserviceafter = '3m' } = config.consul?.healthCheck ?? {};
