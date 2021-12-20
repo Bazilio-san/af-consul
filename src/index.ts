@@ -4,6 +4,7 @@ import * as dns from 'dns';
 import * as Consul from 'consul';
 import * as _ from 'lodash';
 import Debug from 'debug';
+import { parseBoolean, parseMeta, parseTags, removeAroundQuotas } from './utils';
 
 const debug = Debug('af:consul');
 
@@ -72,6 +73,16 @@ export const getFQDN = (h?: string, withError?: boolean) => {
       });
     });
   });
+};
+
+export const getServiceID = (name: string, instance: string, dn: string, uiHost: string) => {
+  const p = process.env.NODE_ENV === 'production';
+  const ns = `${name}-${instance}`;
+  const id = `${p ? 'prd' : 'dev'}-${dn}${p ? 'r' : 'e'}01-${ns}`.toLowerCase();
+  const ui = `https://${uiHost}/ui/dc-${p ? 'msk-infra' : 'dev'}/services/${id}/instances`;
+  return {
+    ui, ns, id,
+  };
 };
 
 export const getConsulApi = (
@@ -301,15 +312,65 @@ export const getConsulApi = (
       }
       return isJustRegistered ? 1 : 0;
     },
+  };
+};
 
-    getServiceID(name: string, instance: string, dn: string, uiHost: string) {
-      const p = process.env.NODE_ENV === 'production';
-      const ns = `${name}-${instance}`;
-      const id = `${p ? 'prd' : 'dev'}-${dn}${p ? 'r' : 'e'}01-${ns}`.toLowerCase();
-      const ui = `https://${uiHost}/ui/dc-${p ? 'msk-infra' : 'dev'}/services/${id}/instances`;
-      return {
-        ui, ns, id,
-      };
+export const getConsulApiByConfig = ({ config, logger }: { config: any, logger?: AbstractConsulLogger | any }) => {
+  const { host, port, secure, token } = config.consul.agent;
+  const consulAgentOptions = {
+    host,
+    port,
+    secure: parseBoolean(secure),
+    defaults: token ? { token } : undefined,
+  };
+  return {
+    consulApi: getConsulApi({ consulAgentOptions, logger }),
+    consulAgentOptions,
+  };
+};
+
+export const getRegisterConfig = async (options: { config: any, uiHost: string, dn: string, check?: IRegisterCheck }) => {
+  const { config, uiHost, dn } = options;
+  const { webServer } = config;
+  // eslint-disable-next-line prefer-const
+  let { name, instance, version, description, tags, meta, host, port = webServer.port } = config?.consul?.service ?? {};
+  name = removeAroundQuotas(name);
+  instance = removeAroundQuotas(instance);
+  version = removeAroundQuotas(version);
+  description = removeAroundQuotas(description);
+  tags = parseTags(tags);
+  meta = parseMeta(meta);
+
+  const { ui: consulUI, ns: serviceNS, id } = getServiceID(name, instance, dn, uiHost);
+
+  const address = host || (await getFQDN());
+
+  const registerConfig: IRegisterOptions = {
+    id,
+    name: id,
+    tags: [name, version, dn, ...(tags)],
+    meta: {
+      name,
+      version,
+      description,
+      instance,
+      host: address,
+      port: String(port),
+      NODE_ENV: process.env.NODE_ENV,
+      ...(meta),
     },
+    port: Number(port),
+    address,
+  };
+  registerConfig.check = options.check || {
+    name: `Service '${serviceNS}'`,
+    http: `http://${address}:${port}/health`,
+    interval: '10s',
+    timeout: '5s',
+    deregistercriticalserviceafter: '3m',
+  };
+
+  return {
+    consulUI, registerConfig, serviceId: id,
   };
 };
