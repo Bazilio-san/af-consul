@@ -15,7 +15,7 @@ class ToCurl {
       this.request = {
         method,
         headers,
-        url: `${req._client._opts.baseUrl.protocol}//${hostname}:${port}${path}`,
+        url: `${req._client._opts.baseUrl.protocol}//${hostname}:${port}${path}`.split('?')[0],
         params: req.opts.query,
         data,
       };
