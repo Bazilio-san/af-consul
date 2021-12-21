@@ -7,7 +7,7 @@
     </scripts>
     <node-interpreter value="project" />
     <envs>
-      <env name="DEBUG" value="af:consul" />
+      <env name="DEBUG" value="af:consul*" />
     </envs>
     <method v="2" />
   </configuration>

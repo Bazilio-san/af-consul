@@ -4,9 +4,13 @@ import * as dns from 'dns';
 import * as Consul from 'consul';
 import Debug from 'debug';
 import { parseBoolean, parseMeta, parseTags, removeAroundQuotas } from './utils';
+import getCurl from './get-curl';
 
 const prefix = 'af:consul';
 const debug = Debug(prefix);
+const debugCurl = Debug('af:consul:curl');
+const yellow = '\x1b[33m';
+const reset = '\x1b[0m';
 
 export interface ISocketInfo {
   host: string;
@@ -114,21 +118,26 @@ export const getConsulApi = (
     if (debug.enabled) {
       const { req: { hostname, port, path, method, headers }, body } = request;
       const { secure } = consulAgentOptions;
-      let msg = `${method} http${secure ? 's' : ''}://${hostname}${port ? `:${port}` : ''}${path}`;
+      let msg = `###\n${method} http${secure ? 's' : ''}://${hostname}${port ? `:${port}` : ''}${path}`;
       Object.entries(headers)
-        .forEach(([key, value]) => {
-          msg += `\n${key}: ${value}`;
+        .forEach(([headerName, value]) => {
+          if (headerName !== 'content-length') {
+            msg += `\n${headerName}: ${value}`;
+          }
         });
       if ((method === 'POST' || method === 'PUT') && body) {
         try {
-          msg += '\n================== BODY START ==================';
-          msg += `\n${JSON.stringify(JSON.parse(body.toString()), undefined, 2)}`;
-          msg += '\n================== BODY END ====================';
+          msg += `\n\n${JSON.stringify(JSON.parse(body.toString()), undefined, 2)}`;
         } catch (err: Error | any) {
           logger.error(`ERROR (onRequest): \n  err.message: ${err.message}\n  err.stack:\n${err.stack}\n`);
         }
       }
-      debug(msg);
+      Debug('REQUEST:');
+      console.log(`${yellow}${msg}${reset}`);
+    }
+    if (debugCurl.enabled) {
+      debug('CURL:');
+      console.log(`${yellow}${getCurl(request, true)}${reset}`);
     }
     next();
   });

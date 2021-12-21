@@ -31,7 +31,10 @@ const config = {
       port: process.env.CONSUL_SERVICE_PORT || null,
     },
   },
-  webServer: { host: process.env.WS_HOST || '0.0.0.0' },
+  webServer: {
+    host: process.env.WS_HOST || '0.0.0.0',
+    port: process.env.WS_PORT || '10000',
+  },
 };
 
 export default async () => {
@@ -52,7 +55,7 @@ export default async () => {
       consulUI,
       registerConfig,
       serviceId,
-      registerService: (forceReRegister = false) => consulApi.registerService({ registerConfig, forceReRegister }),
+      registerService: (forceReRegister = true) => consulApi.registerService({ registerConfig, forceReRegister }),
       deregister: (svcId = serviceId) => consulApi.deregisterIfNeed(svcId),
     };
   }
