@@ -20,7 +20,8 @@ module.exports = {
     'max-len': ['warn', 200],
     'no-underscore-dangle': 'off',
     'consistent-return': 'off',
-    'no-unused-vars': 'warn',
+    'no-unused-vars': 'off',
+    '@typescript-eslint/no-unused-vars': 'warn',
     'import/extensions': 'off',
     'import/no-unresolved': 'off',
     'object-curly-newline': [

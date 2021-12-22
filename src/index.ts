@@ -34,6 +34,10 @@ export interface IRegisterOptions extends Consul.Agent.Service.RegisterOptions {
   taggedAddresses?: any;
 }
 
+export interface IConsul extends Consul.Consul {
+  _ext(eventName: 'onRequest' | 'onResponse', callback: (request: any, next: Function) => void): void;
+}
+
 export interface IServiceOptions {
   registerConfig: IRegisterOptions;
   forceReRegister?: boolean;
@@ -61,7 +65,7 @@ abstract class AbstractConsulLogger {
 }
 
 // Returns fully qualified domain name
-export const getFQDN = (h?: string, withError?: boolean) => {
+export const getFQDN = (h?: string, withError?: boolean, onlyDomain?: boolean) => {
   h = h || os.hostname();
   return new Promise((resolve, reject) => {
     dns.lookup(h as string, { hints: dns.ADDRCONFIG }, (err: any, ip: string) => {
@@ -71,6 +75,10 @@ export const getFQDN = (h?: string, withError?: boolean) => {
       dns.lookupService(ip, 0, (err2, hostname) => {
         if (err2) {
           return withError ? reject(err2) : resolve(null);
+        }
+        if (onlyDomain && !/\.[a-z]+$/i.test(hostname)) {
+          resolve(null);
+          return;
         }
         resolve(hostname);
       });
@@ -102,7 +110,7 @@ export const getConsulApi = (
     throw new Error(`The port for consul agent is invalid: [${consulAgentOptions.port}]`);
   }
   consulAgentOptions.port = String(numericPort);
-  const consulInstance = Consul(consulAgentOptions); // { host, port, secure, defaults: { token } }
+  const consulInstance: IConsul = Consul(consulAgentOptions) as IConsul; // { host, port, secure, defaults: { token } }
 
   if (!logger?.info) {
     logger = {
@@ -113,7 +121,6 @@ export const getConsulApi = (
     };
   }
 
-  // @ts-ignore
   consulInstance._ext('onRequest', (request, next) => {
     if (debug.enabled) {
       const { req: { hostname, port, path, method, headers }, body } = request;
@@ -141,7 +148,7 @@ export const getConsulApi = (
     }
     next();
   });
-  // @ts-ignore
+
   consulInstance._ext('onResponse', (request, next) => {
     try {
       const { res } = request || {};
@@ -299,10 +306,14 @@ export const getConsulApi = (
   };
 };
 
-export const getConsulApiByConfig = ({ config, logger }: { config: any, logger?: AbstractConsulLogger | any }) => {
+export const getConsulApiByConfig = async ({
+  config,
+  logger,
+}: { config: any, logger?: AbstractConsulLogger | any }) => {
   const { host, port, secure, token } = config.consul.agent;
+
   const consulAgentOptions = {
-    host,
+    host: host || (await getFQDN()) || process.env.HOST_HOSTNAME || config.consul.service?.host,
     port,
     secure: parseBoolean(secure),
     defaults: token ? { token } : undefined,

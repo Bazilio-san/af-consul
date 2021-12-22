@@ -39,7 +39,7 @@ const config = {
 
 export default async () => {
   if (!cf) {
-    const { consulApi, consulAgentOptions } = getConsulApiByConfig({ config, logger });
+    const { consulApi, consulAgentOptions } = await getConsulApiByConfig({ config, logger });
     const { consulUI, registerConfig, serviceId } = await getRegisterConfig({
       config,
       uiHost: 'consul.work',
