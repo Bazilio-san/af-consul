@@ -45,10 +45,6 @@ export default async () => {
       uiHost: 'consul.work',
       dn: 'cep',
     });
-
-    logger.info(`CONSUL AGENT OPTIONS: \n${JSON.stringify(consulAgentOptions, undefined, 2)}`);
-    logger.info(`REGISTER CONFIG: \n${JSON.stringify(registerConfig, undefined, 2)}`);
-
     cf = {
       consulApi,
       consulAgentOptions,

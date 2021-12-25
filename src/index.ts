@@ -2,67 +2,23 @@
 import * as os from 'os';
 import * as dns from 'dns';
 import * as Consul from 'consul';
-import Debug from 'debug';
-import { parseBoolean, parseMeta, parseTags, removeAroundQuotas } from './utils';
-import getCurl from './get-curl';
+import { cyan, magenta, parseBoolean, parseMeta, parseTags, removeAroundQuotas, reset, yellow } from './utils';
+import getCurl from './get-curl-text';
+import getHttpRequestText from './get-http-request-text';
+import { AbstractConsulLogger,
+  IConsul,
+  IConsulAgentOptions,
+  IRegisterCheck,
+  IRegisterOptions,
+  IServiceOptions,
+  ISocketInfo } from './types';
 
-const prefix = 'af:consul';
-const debug = Debug(prefix);
-const debugCurl = Debug('af:consul:curl');
-const yellow = '\x1b[33m';
-const reset = '\x1b[0m';
-
-export interface ISocketInfo {
-  host: string;
-  port: string | number;
-}
-
-export interface IRegisterCheck extends Consul.Agent.Service.RegisterCheck {
-  name?: string;
-  tcp?: string;
-  dockercontainerid?: string;
-  shell?: string;
-  timeout?: string;
-  deregistercriticalserviceafter?: string;
-}
-
-export interface IRegisterOptions extends Consul.Agent.Service.RegisterOptions {
-  check?: IRegisterCheck | undefined;
-  checks?: IRegisterCheck[] | undefined;
-  connect?: any;
-  proxy?: any;
-  taggedAddresses?: any;
-}
-
-export interface IConsul extends Consul.Consul {
-  _ext(eventName: 'onRequest' | 'onResponse', callback: (request: any, next: Function) => void): void;
-}
-
-export interface IServiceOptions {
-  registerConfig: IRegisterOptions;
-  forceReRegister?: boolean;
-}
-
-export interface IConsulAgentOptions extends Consul.ConsulOptions {
-}
-
-const r = '\x1b[0m';
-const cy = '\x1b[36m';
-
-// const g = '\x1b[32m';
-
-abstract class AbstractConsulLogger {
-  /* eslint-disable no-unused-vars */
-  abstract silly(...args: unknown[]): any;
-
-  abstract info(...args: unknown[]): any;
-
-  abstract warn(...args: unknown[]): any;
-
-  abstract error(...args: unknown[]): any;
-
-  /* eslint-enable no-unused-vars */
-}
+const PREFIX = 'AF-CONSUL';
+const DEBUG = (String(process.env.DEBUG || '')).trim();
+const dbg = { on: /\baf-consul/i.test(DEBUG), curl: /\baf-consul:curl/i.test(DEBUG) };
+const debug = (msg: string) => {
+  console.log(`${magenta}${PREFIX}${reset}: ${msg}`);
+};
 
 // Returns fully qualified domain name
 export const getFQDN = (h?: string, withError?: boolean, onlyDomain?: boolean) => {
@@ -102,16 +58,6 @@ export const getConsulApi = (
     logger,
   }: { consulAgentOptions: IConsulAgentOptions; logger?: AbstractConsulLogger | any },
 ) => {
-  if (debug.enabled) {
-    debug(`============= consulAgentOptions: =================\n${JSON.stringify(consulAgentOptions, undefined, 2)}`);
-  }
-  const numericPort = Number(consulAgentOptions.port);
-  if (!numericPort) {
-    throw new Error(`The port for consul agent is invalid: [${consulAgentOptions.port}]`);
-  }
-  consulAgentOptions.port = String(numericPort);
-  const consulInstance: IConsul = Consul(consulAgentOptions) as IConsul; // { host, port, secure, defaults: { token } }
-
   if (!logger?.info) {
     logger = {
       silly: console.log,
@@ -121,30 +67,20 @@ export const getConsulApi = (
     };
   }
 
+  if (dbg.on) {
+    debug(`CONSUL AGENT OPTIONS:\n${JSON.stringify(consulAgentOptions, undefined, 2)}`);
+  }
+  const numericPort = Number(consulAgentOptions.port);
+  if (!numericPort) {
+    throw new Error(`The port for consul agent is invalid: [${consulAgentOptions.port}]`);
+  }
+  consulAgentOptions.port = String(numericPort);
+  const consulInstance: IConsul = Consul(consulAgentOptions) as IConsul; // { host, port, secure, defaults: { token } }
+
   consulInstance._ext('onRequest', (request, next) => {
-    if (debug.enabled) {
-      const { req: { hostname, port, path, method, headers }, body } = request;
-      const { secure } = consulAgentOptions;
-      let msg = `###\n${method} http${secure ? 's' : ''}://${hostname}${port ? `:${port}` : ''}${path}`;
-      Object.entries(headers)
-        .forEach(([headerName, value]) => {
-          if (headerName !== 'content-length') {
-            msg += `\n${headerName}: ${value}`;
-          }
-        });
-      if ((method === 'POST' || method === 'PUT') && body) {
-        try {
-          msg += `\n\n${JSON.stringify(JSON.parse(body.toString()), undefined, 2)}`;
-        } catch (err: Error | any) {
-          logger.error(`ERROR (onRequest): \n  err.message: ${err.message}\n  err.stack:\n${err.stack}\n`);
-        }
-      }
-      Debug('REQUEST:');
-      console.log(`${yellow}${msg}${reset}`);
-    }
-    if (debugCurl.enabled) {
-      debug('CURL:');
-      console.log(`${yellow}${getCurl(request, true)}${reset}`);
+    if (dbg.on) {
+      const msg = dbg.curl ? getCurl(request, true) : getHttpRequestText(request, !!consulAgentOptions.secure);
+      debug(`${yellow}${msg}${reset}`);
     }
     next();
   });
@@ -153,7 +89,7 @@ export const getConsulApi = (
     try {
       const { res } = request || {};
       const { statusCode = 0, body = null } = res || {};
-      debug(`Status code: ${statusCode}`);
+      debug(`HTTP Status: ${statusCode}`);
       if (statusCode > 299) {
         const serviceName = request._args?.[0]?.name ?? '';
         if (body) {
@@ -222,7 +158,7 @@ export const getConsulApi = (
         passing: true,
       });
       if (!result || !result.length) {
-        logger.warn(`CONSUL: No working service found: ${cy}${serviceName}${r}. Return defaults ${defaults.host}:${defaults.port}`);
+        logger.warn(`CONSUL: No working service found: ${cyan}${serviceName}${reset}. Return defaults ${defaults.host}:${defaults.port}`);
         return defaults;
       }
       const [{
@@ -273,13 +209,13 @@ export const getConsulApi = (
       if (isAlreadyRegistered) {
         const isDeregister = await this.agentServiceDeregister(serviceId);
         if (isDeregister) {
-          logger.info(`Previous registration of service '${cy}${serviceId}${r}' removed from Consul`);
+          logger.info(`Previous registration of service '${cyan}${serviceId}${reset}' removed from Consul`);
         } else {
-          logger.error(`Previous registration of service '${cy}${serviceId}${r}' was NOT removed from Consul`);
+          logger.error(`Previous registration of service '${cyan}${serviceId}${reset}' was NOT removed from Consul`);
           return false;
         }
       } else {
-        logger.info(`Service '${cy}${serviceId}${r}' is not registered in Consul`);
+        logger.info(`Service '${cyan}${serviceId}${reset}' is not registered in Consul`);
       }
       return true;
     },
@@ -293,13 +229,13 @@ export const getConsulApi = (
         return 2;
       }
       if (isAlreadyRegistered && (await this.agentServiceDeregister(serviceId))) {
-        logger.info(`Previous registration of service '${cy}${serviceId}${r}' removed from Consul`);
+        logger.info(`Previous registration of service '${cyan}${serviceId}${reset}' removed from Consul`);
       }
       const isJustRegistered = await this.agentServiceRegister(registerConfig);
       if (isJustRegistered) {
-        logger.info(`Service '${cy}${serviceId}${r}' is registered in Consul`);
+        logger.info(`Service '${cyan}${serviceId}${reset}' is registered in Consul`);
       } else {
-        logger.error(`Service '${cy}${serviceId}${r}' is NOT registered in Consul`);
+        logger.error(`Service '${cyan}${serviceId}${reset}' is NOT registered in Consul`);
       }
       return isJustRegistered ? 1 : 0;
     },
@@ -337,14 +273,14 @@ export const getRegisterConfig = async (options: { config: any, uiHost: string, 
   meta = parseMeta(meta);
   port = Number(port) || Number(webServer.port);
   if (!port) {
-    throw new Error(`${prefix}: Port is empty!`);
+    throw new Error(`${PREFIX}: Port is empty!`);
   }
 
   const { ui: consulUI, ns: serviceNS, id } = getServiceID(name, instance, dn, uiHost);
 
   const address = host || (await getFQDN());
   if (!address) {
-    throw new Error(`${prefix}: Address is empty!`);
+    throw new Error(`${PREFIX}: Address is empty!`);
   }
 
   const registerConfig: IRegisterOptions = {

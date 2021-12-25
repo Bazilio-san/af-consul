@@ -1,7 +1,7 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="TEST: register" type="NodeJSConfigurationType" path-to-js-file="dist/cjs/test/register.js" working-dir="$PROJECT_DIR$">
     <envs>
-      <env name="DEBUG" value="af:consul*" />
+      <env name="DEBUG" value="af-consul" />
     </envs>
     <method v="2" />
   </configuration>

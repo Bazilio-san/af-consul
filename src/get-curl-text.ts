@@ -107,9 +107,9 @@ class ToCurl {
   }
 }
 
-const getCURL = (req: any, isPapi?: boolean) => {
+const getCurlText = (req: any, isPapi?: boolean) => {
   const instance = new ToCurl(req, isPapi);
   return instance.getCURL();
 };
 
-export default getCURL;
+export default getCurlText;
