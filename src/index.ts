@@ -17,7 +17,9 @@ const PREFIX = 'AF-CONSUL';
 const DEBUG = (String(process.env.DEBUG || '')).trim();
 const dbg = { on: /\baf-consul/i.test(DEBUG), curl: /\baf-consul:curl/i.test(DEBUG) };
 const debug = (msg: string) => {
-  console.log(`${magenta}${PREFIX}${reset}: ${msg}`);
+  if (dbg.on) {
+    console.log(`${magenta}${PREFIX}${reset}: ${msg}`);
+  }
 };
 
 // Returns fully qualified domain name
