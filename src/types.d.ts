@@ -29,6 +29,7 @@ export interface IConsul extends Consul.Consul {
 export interface IServiceOptions {
   registerConfig: IRegisterOptions;
   forceReRegister?: boolean;
+  noAlreadyRegisteredMessage?: boolean;
 }
 
 export interface IConsulAgentOptions extends Consul.ConsulOptions {

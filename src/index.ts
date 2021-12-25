@@ -223,11 +223,14 @@ export const getConsulApi = (
     },
 
     async registerService(options: IServiceOptions) {
-      const { registerConfig, forceReRegister = true } = options;
+      const { registerConfig, forceReRegister = true, noAlreadyRegisteredMessage = false } = options;
       const serviceId = registerConfig.id || registerConfig.name;
 
       const isAlreadyRegistered = await this.checkIfServiceRegistered(serviceId);
       if (isAlreadyRegistered && !forceReRegister) {
+        if (!noAlreadyRegisteredMessage) {
+          logger.info(`Service '${cyan}${serviceId}${reset}' already registered in Consul`);
+        }
         return 2;
       }
       if (isAlreadyRegistered && (await this.agentServiceDeregister(serviceId))) {
