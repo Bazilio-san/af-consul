@@ -11,7 +11,8 @@
     "target": "es2019",
     "module": "commonjs",
     "types": [
-      "node"
+      "node",
+      "jest"
     ],
     "moduleResolution": "node",
     "emitDecoratorMetadata": true,
@@ -24,7 +25,7 @@
   },
   "include": [
     "src/*.ts",
-    "test/*.ts"
+    "__tests__/*.ts"
   ],
   "exclude": [
     "node_modules",

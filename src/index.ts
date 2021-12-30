@@ -2,7 +2,8 @@
 import * as os from 'os';
 import * as dns from 'dns';
 import * as Consul from 'consul';
-import { cyan, magenta, parseBoolean, parseMeta, parseTags, removeAroundQuotas, reset, yellow } from './utils';
+import { cyan, magenta, reset, yellow } from './color';
+import { parseBoolean, parseMeta, parseTags, removeAroundQuotas } from './utils';
 import getCurl from './get-curl-text';
 import getHttpRequestText from './get-http-request-text';
 import { AbstractConsulLogger,
@@ -12,6 +13,9 @@ import { AbstractConsulLogger,
   IRegisterOptions,
   IServiceOptions,
   ISocketInfo } from './types';
+import loggerStub from './logger-stub';
+
+export { AccessPoints } from './AccessPoints';
 
 const PREFIX = 'AF-CONSUL';
 const DEBUG = (String(process.env.DEBUG || '')).trim();
@@ -61,12 +65,7 @@ export const getConsulApi = (
   }: { consulAgentOptions: IConsulAgentOptions; logger?: AbstractConsulLogger | any },
 ) => {
   if (!logger?.info) {
-    logger = {
-      silly: console.log,
-      info: console.log,
-      warn: console.log,
-      error: console.log,
-    };
+    logger = loggerStub;
   }
 
   if (dbg.on) {

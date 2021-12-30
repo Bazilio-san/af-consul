@@ -1,6 +1,6 @@
 {
   "extends": "./tsconfig.json",
-  "exclude": ["test/*.*"],
+  "exclude": ["__tests__/*.*"],
   "compilerOptions": {
     "module": "esnext",
     "target": "es2019",
