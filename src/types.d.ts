@@ -1,5 +1,6 @@
 import Consul from "consul";
 import { IAccessPoints } from "./access-points";
+import EventEmitter from "events";
 
 export interface ISocketInfo {
   host: string;
@@ -64,5 +65,33 @@ export interface IConfig {
 export interface ICLOptions {
   config: IConfig,
   logger?: ILogger,
+  em?: EventEmitter,
   timeout?: number
+  force?: boolean
+}
+
+export interface IConsulAPI {
+  [functionName: string]: (...args: any[]) => any,
+}
+
+export interface IAPInAgentOptions {
+  consulApi: IConsulAPI;
+  consulAgentOptions: IConsulAgentOptions;
+}
+
+interface IGetRegisterConfigOptions extends ICLOptions {
+  uiHost: string,
+  dn: string,
+  check?: IRegisterCheck
+}
+
+interface IRegisterConfig {
+  registerConfig: IRegisterOptions,
+  consulUI: string,
+  serviceId: string
+}
+
+export type IAPI = IRegisterConfig & IAPInAgentOptions & {
+  registerService: (forceReRegister?: boolean) => Promise<0 | 1 | 2>,
+  deregister: (svcId?: string) => Promise<boolean>,
 }

@@ -1,9 +1,7 @@
 import 'dotenv/config';
 import os from 'os';
 import { logger } from './logger';
-import { getConsulApiByConfig, getRegisterConfig } from '../src';
-
-let cf: any;
+import { getAPI } from '../src';
 
 const config = {
   consul: {
@@ -37,23 +35,11 @@ const config = {
   },
 };
 
-export default async () => {
-  if (!cf) {
-    const { consulApi, consulAgentOptions } = await getConsulApiByConfig({ config, logger });
-    const { consulUI, registerConfig, serviceId } = await getRegisterConfig({
-      config,
-      uiHost: 'consul.work',
-      dn: 'cep',
-    });
-    cf = {
-      consulApi,
-      consulAgentOptions,
-      consulUI,
-      registerConfig,
-      serviceId,
-      registerService: (forceReRegister = true) => consulApi.registerService({ registerConfig, forceReRegister }),
-      deregister: (svcId = serviceId) => consulApi.deregisterIfNeed(svcId),
-    };
-  }
-  return cf;
-};
+export default async () => getAPI(
+  {
+    config,
+    logger,
+    uiHost: 'consul.work',
+    dn: 'cep',
+  },
+);

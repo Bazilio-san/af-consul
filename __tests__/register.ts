@@ -1,8 +1,8 @@
 /* eslint-disable no-console */
-import initConsulAgent from './init-consul-agent';
+import getConsulAPI from './get-consul-api';
 
 const registerInConsul = async () => {
-  const { registerService, consulUI } = await initConsulAgent();
+  const { registerService, consulUI } = await getConsulAPI();
   const isRegistered = await registerService();
   if (isRegistered) {
     console.log(`Consul UI: ${consulUI}`);

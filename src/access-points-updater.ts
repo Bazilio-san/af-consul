@@ -2,7 +2,7 @@
 import { cyan, green, magenta, red, reset } from './color';
 import loggerStub from './logger-stub';
 import { IAccessPoint, IAccessPoints } from './access-points';
-import { getConsulApiByConfig } from '../src';
+import { getConsulApiAndAgentOptions, getConsulApiCached } from '../src';
 import { ICLOptions } from './types';
 
 const PREFIX = 'AP-UPDATER';
@@ -17,23 +17,13 @@ const debug = (msg: string) => {
 
 const UPDATE_INTERVAL_IF_SUCCESS_MILLIS = 2 * 60_000;
 
-let consulApiCached: any;
-
-export const getConsulApi = async (clOptions: ICLOptions) => {
-  if (!consulApiCached) {
-    const { consulApi } = await getConsulApiByConfig(clOptions);
-    consulApiCached = consulApi;
-  }
-  return consulApiCached;
-};
-
 function retrieveProps(accessPoint: IAccessPoint, host: string, meta: any) {
   const port = Number(meta.port) || accessPoint.port;
   return { host, port };
 }
 
 export async function updateAccessPoint(clOptions: ICLOptions, accessPoint: IAccessPoint) {
-  const consulApi = await getConsulApi(clOptions);
+  const { consulApi } = await getConsulApiCached(clOptions);
   if (!consulApi) {
     clOptions.logger?.warn(`${PREFIX}: Не удалось получить consul API`);
     return;
@@ -70,8 +60,11 @@ export async function updateAccessPoint(clOptions: ICLOptions, accessPoint: IAcc
 
 export async function updateAccessPoints(clOptions: ICLOptions) {
   const { accessPoints } = clOptions.config;
-  return Promise.all(Object.values(<IAccessPoints>accessPoints).filter(({ isAP }: any) => isAP)
+  await Promise.all(Object.values(<IAccessPoints>accessPoints).filter(({ isAP }: any) => isAP)
     .map((accessPoint) => updateAccessPoint(clOptions, <IAccessPoint>accessPoint)));
+  if (clOptions.em?.emit) {
+    clOptions.em.emit('start-push-service');
+  }
 }
 
 export const accessPointsUpdater = {

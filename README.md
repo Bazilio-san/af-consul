@@ -40,7 +40,7 @@ const registerOptions = {
 import 'dotenv/config';
 import os from 'os';
 import { logger } from './logger';
-import { getConsulApiByConfig, getRegisterConfig } from '../src';
+import { getConsulApiAndAgentOptions, getRegisterConfig } from '../src';
 
 let cf: any;
 
@@ -75,7 +75,7 @@ const config = {
 
 const initConsulAgent = async () => {
     if (!cf) {
-        const { consulApi, consulAgentOptions } = getConsulApiByConfig({ config, logger });
+        const { consulApi, consulAgentOptions } = getConsulApiAndAgentOptions({ config, logger });
         const { consulUI, registerConfig, serviceId } = await getRegisterConfig({
             config,
             uiHost: 'consul.work',

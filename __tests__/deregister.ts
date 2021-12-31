@@ -1,5 +1,5 @@
-import initConsulAgent from './init-consul-agent';
+import getConsulAPI from './get-consul-api';
 
-initConsulAgent().then(({ deregister }) => {
+getConsulAPI().then(({ deregister }) => {
   deregister(process.argv[2]).then(() => null);
 });

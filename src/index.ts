@@ -2,20 +2,26 @@
 import * as os from 'os';
 import * as dns from 'dns';
 import * as Consul from 'consul';
+import { Mutex } from 'async-mutex';
 import { cyan, magenta, reset, yellow } from './color';
 import { parseBoolean, parseMeta, parseTags, removeAroundQuotas } from './utils';
 import getCurl from './get-curl-text';
 import getHttpRequestText from './get-http-request-text';
-import { ICLOptions,
-  IConfig,
+import { IAPI,
+  IAPInAgentOptions,
+  ICLOptions,
   IConsul,
   IConsulAgentOptions,
+  IConsulAPI,
+  IGetRegisterConfigOptions,
   ILogger,
-  IRegisterCheck,
+  IRegisterConfig,
   IRegisterOptions,
   IServiceOptions,
   ISocketInfo } from './types';
 import loggerStub from './logger-stub';
+
+const mutex = new Mutex();
 
 export { AccessPoints } from './access-points';
 
@@ -67,7 +73,7 @@ export const getConsulApi = (
     consulAgentOptions,
     logger,
   }: { consulAgentOptions: IConsulAgentOptions; logger?: ILogger | any },
-) => {
+): IConsulAPI => {
   if (!logger?.info) {
     logger = loggerStub;
   }
@@ -209,7 +215,7 @@ export const getConsulApi = (
           .some(({ ID: i, Service: s }: any) => i === serviceIdOrName || s === serviceIdOrName);
     },
 
-    async deregisterIfNeed(serviceId: string) {
+    async deregisterIfNeed(serviceId: string): Promise<boolean> {
       const isAlreadyRegistered = await this.checkIfServiceRegistered(serviceId);
       if (isAlreadyRegistered) {
         const isDeregister = await this.agentServiceDeregister(serviceId);
@@ -225,7 +231,7 @@ export const getConsulApi = (
       return true;
     },
 
-    async registerService(options: IServiceOptions) {
+    async registerService(options: IServiceOptions): Promise<0 | 1 | 2> {
       const { registerConfig, forceReRegister = true, noAlreadyRegisteredMessage = false } = options;
       const serviceId = registerConfig.id || registerConfig.name;
 
@@ -250,7 +256,7 @@ export const getConsulApi = (
   };
 };
 
-export const getConsulApiByConfig = async (clOptions: ICLOptions) => {
+export const getConsulApiAndAgentOptions = async (clOptions: ICLOptions): Promise<IAPInAgentOptions> => {
   const { config, logger } = clOptions;
   const { host, port, secure, token } = config.consul.agent;
 
@@ -266,9 +272,22 @@ export const getConsulApiByConfig = async (clOptions: ICLOptions) => {
   };
 };
 
-export const getRegisterConfig = async (options: { config: IConfig, uiHost: string, dn: string, check?: IRegisterCheck }) => {
+let APInAgentOptionsCached: IAPInAgentOptions;
+
+const getConsulApiCached_ = async (clOptions: ICLOptions): Promise<IAPInAgentOptions> => {
+  if (!APInAgentOptionsCached) {
+    APInAgentOptionsCached = await getConsulApiAndAgentOptions(clOptions);
+  }
+  return APInAgentOptionsCached;
+};
+
+export const getConsulApiCached = async (clOptions: ICLOptions): Promise<IAPInAgentOptions> => mutex
+  .runExclusive<IAPInAgentOptions>(async () => getConsulApiCached_(clOptions));
+
+export const getRegisterConfig = async (options: IGetRegisterConfigOptions): Promise<IRegisterConfig> => {
   const { config, uiHost, dn } = options;
   const { webServer } = config;
+
   // eslint-disable-next-line prefer-const
   let { name, instance, version, description, tags, meta, host, port } = config?.consul?.service ?? {};
   name = removeAroundQuotas(name);
@@ -292,6 +311,8 @@ export const getRegisterConfig = async (options: { config: IConfig, uiHost: stri
   const registerConfig: IRegisterOptions = {
     id,
     name: id,
+    port,
+    address,
     tags: [name, version, dn, ...(tags)],
     meta: {
       name,
@@ -303,9 +324,8 @@ export const getRegisterConfig = async (options: { config: IConfig, uiHost: stri
       NODE_ENV: process.env.NODE_ENV,
       ...(meta),
     },
-    port,
-    address,
   };
+
   const { interval = '10s', timeout = '5s', deregistercriticalserviceafter = '3m' } = config.consul?.healthCheck ?? {};
   registerConfig.check = options.check || {
     name: `Service '${serviceNS}'`,
@@ -316,6 +336,29 @@ export const getRegisterConfig = async (options: { config: IConfig, uiHost: stri
   };
 
   return {
-    consulUI, registerConfig, serviceId: id,
+    registerConfig,
+    consulUI,
+    serviceId: id,
   };
+};
+
+// cached
+
+let apiCached: any;
+
+export const getAPI = async (options: IGetRegisterConfigOptions): Promise<IAPI> => {
+  if (!apiCached) {
+    const { consulApi, consulAgentOptions } = await getConsulApiAndAgentOptions(options);
+    const { registerConfig, consulUI, serviceId } = await getRegisterConfig(options);
+    apiCached = {
+      consulApi,
+      consulAgentOptions,
+      consulUI,
+      registerConfig,
+      serviceId,
+      registerService: (forceReRegister = false) => consulApi.registerService({ registerConfig, forceReRegister }),
+      deregister: (svcId = serviceId) => consulApi.deregisterIfNeed(svcId),
+    };
+  }
+  return apiCached;
 };
