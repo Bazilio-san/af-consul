@@ -1,5 +1,5 @@
 import loggerStub from './logger-stub';
-import { cyan, green, magenta, reset } from './color';
+import { blue, cyan, green, magenta, reset } from './color';
 import { ILogger } from './types';
 
 const PREFIX = 'ACCESS-POINT';
@@ -21,7 +21,7 @@ export interface IAccessPoint {
 
 export type IMayBeAccessPoint = IAccessPoint | undefined;
 
-export type IAccessPoints = { [apKey: string]: IAccessPoint } & {logger: ILogger};
+export type IAccessPoints = { [apKey: string]: IAccessPoint } & { logger: ILogger };
 
 // eslint-disable-next-line import/prefer-default-export
 export class AccessPoints {
@@ -115,6 +115,11 @@ export class AccessPoints {
     const became: string[] = [];
     const changes: any[] = [];
 
+    const msgVal = (propName: string, propValue: any, valueColor: string) => {
+      const ret = (v: any, color = blue) => `${cyan}${propName}${reset}: ${color}${v}${reset}`;
+      return (propValue == null || propValue === '') ? ret(`[${String(propValue)}]`) : ret(propValue, valueColor);
+    };
+
     Object.entries(apData).forEach(([propName, newV]) => {
       if (newV === undefined) {
         return;
@@ -122,8 +127,8 @@ export class AccessPoints {
       const oldV = accessPoint[propName];
       newV = AccessPoints.normalizeValue(propName, newV);
       if (oldV !== newV) {
-        was.push(`${cyan}${propName}${reset}: ${magenta}${oldV}${reset}`);
-        became.push(`${cyan}${propName}${reset}: ${green}${newV}${reset}`);
+        was.push(msgVal(propName, oldV, magenta));
+        became.push(msgVal(propName, newV, green));
         changes.push([propName, oldV, newV]);
       }
       accessPoint[propName] = newV;
