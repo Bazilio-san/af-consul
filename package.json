@@ -1,6 +1,6 @@
 {
   "name": "af-consul",
-  "version": "1.0.70",
+  "version": "1.0.71",
   "description": "A highly specialized function library",
   "main": "./dist/cjs/src/index.js",
   "module": "./dist/esm/index.js",
@@ -11,8 +11,8 @@
     "node": ">=10"
   },
   "scripts": {
-    "test:register": "ts-node ./test/register.ts",
-    "test:deregister": "ts-node ./test/deregister.ts",
+    "test:register": "ts-node ./__tests__/register.ts",
+    "test:deregister": "ts-node ./__tests__/deregister.ts",
     "test:access-points": "jest --config jest.config.js",
     "clean": "shx rm -rf dist/*",
     "build": "tsc -b tsconfig.json tsconfig.esm.json tsconfig.types.json",

@@ -1,3 +1,5 @@
+// noinspection JSUnusedGlobalSymbols
+
 export const reset = '\x1b[0m';
 export const rs = reset;
 export const clear = '\x1b[K';

@@ -1,8 +1,10 @@
 /* eslint-disable no-console */
+// noinspection JSUnusedGlobalSymbols
+
 import { cyan, green, magenta, red, reset } from './color';
 import loggerStub from './logger-stub';
 import { IAccessPoint, IAccessPoints } from './access-points';
-import { getConsulApiAndAgentOptions, getConsulApiCached } from '../src';
+import { getConsulApiCached } from '../src';
 import { ICLOptions } from './types';
 
 const PREFIX = 'AP-UPDATER';

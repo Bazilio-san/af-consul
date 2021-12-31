@@ -17,15 +17,16 @@ module.exports = {
   },
   ignorePatterns: ['node_modules/', '**/*.json', '**/dist/**/*.*'],
   rules: {
-    'no-param-reassign': 'off',
-    'max-len': ['warn', 200],
-    'no-underscore-dangle': 'off',
-    'consistent-return': 'off',
-    'no-unused-vars': 'off',
     '@typescript-eslint/no-unused-vars': 'warn',
+    'consistent-return': 'off',
     'import/extensions': 'off',
     'import/no-unresolved': 'off',
     'import/prefer-default-export': 'off',
+    'max-len': ['warn', 200],
+    'no-param-reassign': 'off',
+    'no-plusplus': 'off',
+    'no-underscore-dangle': 'off',
+    'no-unused-vars': 'off',
     'object-curly-newline': [
       'error',
       {

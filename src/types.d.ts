@@ -91,7 +91,7 @@ interface IRegisterConfig {
   serviceId: string
 }
 
-export type IAPI = IRegisterConfig & IAPInAgentOptions & {
+export type IApi = IRegisterConfig & IAPInAgentOptions & {
   registerService: (forceReRegister?: boolean) => Promise<0 | 1 | 2>,
   deregister: (svcId?: string) => Promise<boolean>,
 }
