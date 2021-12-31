@@ -1,4 +1,5 @@
 import Consul from "consul";
+import { IAccessPoints } from "./access-points";
 
 export interface ISocketInfo {
   host: string;
@@ -35,15 +36,33 @@ export interface IServiceOptions {
 export interface IConsulAgentOptions extends Consul.ConsulOptions {
 }
 
-export abstract class AbstractConsulLogger {
+export interface ILogger {
   /* eslint-disable no-unused-vars */
-  abstract silly(...args: unknown[]): any;
+  silly(...args: unknown[]): any;
 
-  abstract info(...args: unknown[]): any;
+  debug(...args: unknown[]): any;
 
-  abstract warn(...args: unknown[]): any;
+  info(...args: unknown[]): any;
 
-  abstract error(...args: unknown[]): any;
+  warn(...args: unknown[]): any;
+
+  error(...args: unknown[]): any;
 
   /* eslint-enable no-unused-vars */
+}
+
+export interface IConfig {
+  accessPoints?: IAccessPoints,
+  consul: {
+    agent: any,
+    healthCheck?: any,
+    service: any,
+  },
+  webServer: any,
+}
+
+export interface ICLOptions {
+  config: IConfig,
+  logger?: ILogger,
+  timeout?: number
 }

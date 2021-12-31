@@ -6,16 +6,20 @@ import { cyan, magenta, reset, yellow } from './color';
 import { parseBoolean, parseMeta, parseTags, removeAroundQuotas } from './utils';
 import getCurl from './get-curl-text';
 import getHttpRequestText from './get-http-request-text';
-import { AbstractConsulLogger,
+import { ICLOptions,
+  IConfig,
   IConsul,
   IConsulAgentOptions,
+  ILogger,
   IRegisterCheck,
   IRegisterOptions,
   IServiceOptions,
   ISocketInfo } from './types';
 import loggerStub from './logger-stub';
 
-export { AccessPoints } from './AccessPoints';
+export { AccessPoints } from './access-points';
+
+export { accessPointsUpdater } from './access-points-updater';
 
 const PREFIX = 'AF-CONSUL';
 const DEBUG = (String(process.env.DEBUG || '')).trim();
@@ -62,7 +66,7 @@ export const getConsulApi = (
   {
     consulAgentOptions,
     logger,
-  }: { consulAgentOptions: IConsulAgentOptions; logger?: AbstractConsulLogger | any },
+  }: { consulAgentOptions: IConsulAgentOptions; logger?: ILogger | any },
 ) => {
   if (!logger?.info) {
     logger = loggerStub;
@@ -246,10 +250,8 @@ export const getConsulApi = (
   };
 };
 
-export const getConsulApiByConfig = async ({
-  config,
-  logger,
-}: { config: any, logger?: AbstractConsulLogger | any }) => {
+export const getConsulApiByConfig = async (clOptions: ICLOptions) => {
+  const { config, logger } = clOptions;
   const { host, port, secure, token } = config.consul.agent;
 
   const consulAgentOptions = {
@@ -264,7 +266,7 @@ export const getConsulApiByConfig = async ({
   };
 };
 
-export const getRegisterConfig = async (options: { config: any, uiHost: string, dn: string, check?: IRegisterCheck }) => {
+export const getRegisterConfig = async (options: { config: IConfig, uiHost: string, dn: string, check?: IRegisterCheck }) => {
   const { config, uiHost, dn } = options;
   const { webServer } = config;
   // eslint-disable-next-line prefer-const

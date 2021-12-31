@@ -1,9 +1,8 @@
 import loggerStub from './logger-stub';
-import { cyan as c, green as g, magenta as m, reset as rs } from './color';
+import { cyan, green, magenta, reset } from './color';
+import { ILogger } from './types';
 
 const PREFIX = 'ACCESS-POINT';
-const _ap_ = Symbol.for('_ap_');
-const _lastSuccessUpdate_ = Symbol.for('_lastSuccessUpdate_');
 
 export interface IAccessPoint {
   consulServiceName: string,
@@ -12,14 +11,17 @@ export interface IAccessPoint {
   port?: number | null,
   host?: string | null,
   setProps?: (data: Record<string, any> | null) => IAccessPoint | undefined,
-  [_ap_]?: true,
-  [_lastSuccessUpdate_]?: 0,
+  isAP?: true,
+  lastSuccessUpdate?: number,
   getChanges?: () => [string, any, any][] | undefined,
+  retrieveProps?: (host: string, meta: Record<string, any>) => Record<string, any>,
 
   [propName: string]: any
 }
 
 export type IMayBeAccessPoint = IAccessPoint | undefined;
+
+export type IAccessPoints = { [apKey: string]: IAccessPoint } & {logger: ILogger};
 
 // eslint-disable-next-line import/prefer-default-export
 export class AccessPoints {
@@ -82,8 +84,9 @@ export class AccessPoints {
       this.logger.error(`"${apKey}" access point not added because it lacks "consulServiceName" property`);
       return undefined;
     }
-    const accessPoint: Record<string, any> = { [_ap_]: true };
+    const accessPoint: Record<string, any> = {};
     Object.defineProperty(accessPoint, 'isAP', { value: true });
+    Object.defineProperty(accessPoint, 'lastSuccessUpdate', { value: 0, writable: true });
     this[apKey] = accessPoint;
     Object.entries(apData).forEach(([propName, v]) => {
       accessPoint[propName] = AccessPoints.normalizeValue(propName, v);
@@ -104,8 +107,9 @@ export class AccessPoints {
       return this.addAP(apKey, apData);
     }
     /* istanbul ignore if */
-    if (!accessPoint[_ap_]) {
-      accessPoint[_ap_] = true;
+    if (!accessPoint.isAP) {
+      Object.defineProperty(accessPoint, 'isAP', { value: true });
+      Object.defineProperty(accessPoint, 'lastSuccessUpdate', { value: 0, writable: true });
     }
     const was: string[] = [];
     const became: string[] = [];
@@ -118,14 +122,14 @@ export class AccessPoints {
       const oldV = accessPoint[propName];
       newV = AccessPoints.normalizeValue(propName, newV);
       if (oldV !== newV) {
-        was.push(`${c}${propName}${rs}: ${m}${oldV}${rs}`);
-        became.push(`${c}${propName}${rs}: ${g}${newV}${rs}`);
+        was.push(`${cyan}${propName}${reset}: ${magenta}${oldV}${reset}`);
+        became.push(`${cyan}${propName}${reset}: ${green}${newV}${reset}`);
         changes.push([propName, oldV, newV]);
       }
       accessPoint[propName] = newV;
     });
     if (was.length) {
-      this.logger.info(`${PREFIX}: Change AP for ${c}${accessPoint.consulServiceName}${rs} to ${became.join('; ')}  from  ${was.join('; ')}`);
+      this.logger.info(`${PREFIX}: Change AP for ${cyan}${accessPoint.consulServiceName}${reset} to ${became.join('; ')}  from  ${was.join('; ')}`);
     }
     const result = AccessPoints.getPureProps(accessPoint);
     result.getChanges = () => (changes.length ? changes : undefined);
@@ -135,7 +139,7 @@ export class AccessPoints {
   getAP(accessPointKey: string): IMayBeAccessPoint {
     if (accessPointKey) {
       const accessPoint = this[accessPointKey];
-      if (!accessPoint || !accessPoint[_ap_]) {
+      if (!accessPoint?.isAP) {
         return undefined;
       }
       return accessPoint;
@@ -150,16 +154,14 @@ export class AccessPoints {
   get(accessPointKey?: string) {
     if (accessPointKey) {
       const accessPoint = this[accessPointKey];
-      if (!accessPoint || !accessPoint[_ap_]) {
+      if (!accessPoint?.isAP) {
         return undefined;
       }
       return AccessPoints.getPureProps(accessPoint);
     }
     const accessPoints = Object.create(null);
-    Object.entries(this).forEach(([apKey, accessPoint]) => {
-      if (accessPoint[_ap_]) {
-        accessPoints[apKey] = AccessPoints.getPureProps(accessPoint);
-      }
+    Object.values(this).filter(({ isAP }) => isAP).forEach((accessPoint) => {
+      accessPoints[accessPoint.id] = AccessPoints.getPureProps(accessPoint);
     });
     return accessPoints;
   }
