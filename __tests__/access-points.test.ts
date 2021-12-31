@@ -2,7 +2,7 @@ import { AccessPoints } from '../src';
 import { logger } from './logger';
 
 const config = {
-  ap: {
+  accessPoints: {
     wso2siAPI: {
       title: 'WSO2 SI API',
       consulServiceName: 'dev-cepe01-wso2si-d2',
@@ -35,7 +35,7 @@ const config = {
   },
 };
 
-const cfg = { ap: new AccessPoints(config.ap) };
+const cfg = { accessPoints: new AccessPoints(config.accessPoints) };
 
 const setProperty = (object: any, property: string, value: any) => {
   const originalProperty = Object.getOwnPropertyDescriptor(object, property);
@@ -51,8 +51,8 @@ const mockLoggerInfo = jest.fn((...args) => {
   logger.info(...args);
 });
 
-setProperty(cfg.ap.logger, 'error', mockLoggerError);
-setProperty(cfg.ap.logger, 'info', mockLoggerInfo);
+setProperty(cfg.accessPoints.logger, 'error', mockLoggerError);
+setProperty(cfg.accessPoints.logger, 'info', mockLoggerInfo);
 
 describe('Access Points test', () => {
   test('Checking the initial state of all AP', () => {
@@ -91,7 +91,7 @@ describe('Access Points test', () => {
         port: 9902,
       },
     };
-    const result = cfg.ap.get();
+    const result = cfg.accessPoints.get();
     expect(result).toMatchObject(expected);
   });
 
@@ -105,12 +105,12 @@ describe('Access Points test', () => {
       user: 'admin',
       pass: 'admin',
     };
-    const result = cfg.ap.get('wso2siAPI');
+    const result = cfg.accessPoints.get('wso2siAPI');
     expect(result).toMatchObject(expected);
   });
 
   test('Getting information about non existent AP', () => {
-    const result = cfg.ap.get('foo');
+    const result = cfg.accessPoints.get('foo');
     expect(result).toBe(undefined);
   });
 
@@ -126,12 +126,12 @@ describe('Access Points test', () => {
       anyProp: true,
     };
 
-    const result1 = cfg.ap.setAP('wso2siAPI', {
+    const result1 = cfg.accessPoints.setAP('wso2siAPI', {
       host: 'new-host', port: '456', anyProp: true, undefProp: undefined,
     });
     expect(result1).toMatchObject(expected);
 
-    const result2 = cfg.ap.get('wso2siAPI');
+    const result2 = cfg.accessPoints.get('wso2siAPI');
     expect(result2).toMatchObject(expected);
 
     expect(mockLoggerInfo.mock.calls.length).toBe(1);
@@ -147,7 +147,7 @@ describe('Access Points test', () => {
       user: 'admin',
       p: 'eee',
     };
-    const wso2siAPI = cfg.ap.getAP('wso2siAPI');
+    const wso2siAPI = cfg.accessPoints.getAP('wso2siAPI');
     const changedAP = wso2siAPI?.setProps?.({
       host: 'Update-host-self', port: 45687, p: 'eee',
     });
@@ -158,7 +158,7 @@ describe('Access Points test', () => {
       ['port', 456, 45687],
       ['p', undefined, 'eee'],
     ]);
-    const data = cfg.ap.get('wso2siAPI');
+    const data = cfg.accessPoints.get('wso2siAPI');
     expect(data).toMatchObject(expected);
   });
 
@@ -172,9 +172,9 @@ describe('Access Points test', () => {
       anyProp: true,
       anyObj: { pr1: 1, pr2: 'eeee' },
     };
-    expect(cfg.ap.get('newAP')).toBe(undefined);
+    expect(cfg.accessPoints.get('newAP')).toBe(undefined);
 
-    cfg.ap.setAP('newAP', {
+    cfg.accessPoints.setAP('newAP', {
       title: 'new title',
       consulServiceName: 'dev-cepe01-new-d2',
       host: 'new-host2',
@@ -188,19 +188,19 @@ describe('Access Points test', () => {
         return a + 1;
       },
     });
-    expect(cfg.ap.get('newAP')).toMatchObject(expected);
+    expect(cfg.accessPoints.get('newAP')).toMatchObject(expected);
   });
 
   test('Add new AP with no data specified', () => {
-    expect(cfg.ap.addAP('empty', null)).toBe(undefined);
+    expect(cfg.accessPoints.addAP('empty', null)).toBe(undefined);
   });
 
   test('Update AP with no data specified', () => {
-    expect(cfg.ap.setAP('empty', null)).toBe(undefined);
+    expect(cfg.accessPoints.setAP('empty', null)).toBe(undefined);
   });
 
   test('Update AP with no consulServiceName specified', () => {
-    expect(cfg.ap.setAP('noConsulServiceName', { title: 'new title' })).toBe(undefined);
+    expect(cfg.accessPoints.setAP('noConsulServiceName', { title: 'new title' })).toBe(undefined);
     expect(mockLoggerError.mock.calls.length).toBe(1);
   });
 });
