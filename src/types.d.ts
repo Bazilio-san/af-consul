@@ -96,7 +96,8 @@ export interface IAPInAgentOptions {
 interface IGetRegisterConfigOptions extends ICLOptions {
   uiHost: string,
   dn: string,
-  check?: IRegisterCheck
+  check?: IRegisterCheck,
+  registerType?: TRegisterType
 }
 
 interface IRegisterConfig {

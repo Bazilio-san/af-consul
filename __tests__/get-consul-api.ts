@@ -1,9 +1,10 @@
 import 'dotenv/config';
+import * as _ from 'lodash';
 import os from 'os';
 import { logger } from './logger';
 import { getAPI } from '../src';
 
-const config = {
+const cfg = {
   consul: {
     healthCheck: {
       interval: process.env.CONSUL_HEALTH_CHECK_INTERVAL || '10s',
@@ -37,11 +38,17 @@ const config = {
   },
 };
 
-export default async () => getAPI(
-  {
-    config,
-    logger,
-    uiHost: process.env.CONSUL_UI_HOST || 'consul.work',
-    dn: process.env.CONSUL_DN || 'dn',
-  },
-);
+export default async (instanceNum?: number) => {
+  const config = _.cloneDeep(cfg);
+  if (instanceNum) {
+    config.consul.service.instance += String(instanceNum);
+  }
+  return getAPI(
+    {
+      config,
+      logger,
+      uiHost: process.env.CONSUL_UI_HOST || 'consul.work',
+      dn: process.env.CONSUL_DN || 'dn',
+    },
+  );
+};

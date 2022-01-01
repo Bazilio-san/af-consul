@@ -11,7 +11,8 @@ import { IApi,
   TRegisterType } from './types';
 import { getFQDN } from './get-fqdn';
 import { getConsulApi } from './api';
-import { PREFIX } from './constants';
+import { MAX_API_CACHED, PREFIX } from './constants';
+import { registerConfigHash } from './get-hash';
 
 const mutex = new Mutex();
 
@@ -117,28 +118,44 @@ export const getRegisterConfig = async (options: IGetRegisterConfigOptions): Pro
 
 // cached
 
-let apiCached: any;
+export const apiCached: { [hash: string]: { created: number, api: IApi } } = {};
+
+const minimizeApiCache = () => {
+  const len = Object.keys(apiCached).length;
+  if (len >= MAX_API_CACHED) {
+    const sortedDesc = Object.entries(apiCached)
+      .sort((a, b) => b[1].created - a[1].created);
+    sortedDesc.splice(0, MAX_API_CACHED - 1);
+    sortedDesc.map(([h]) => h).forEach((h) => {
+      delete apiCached[h];
+    });
+  }
+};
 
 export const getAPI = async (options: IGetRegisterConfigOptions): Promise<IApi> => {
-  if (!apiCached) {
+  const hash = registerConfigHash(options);
+  if (!apiCached[hash]) {
     const { consulApi, consulAgentOptions } = await getConsulApiCached(options);
     const { registerConfig, consulUI, serviceId } = await getRegisterConfig(options);
-    // noinspection JSUnusedGlobalSymbols
-    apiCached = {
-      consulApi,
-      consulAgentOptions,
-      consulUI,
-      registerConfig,
-      serviceId,
-      register: (registerType: TRegisterType = 'if-not-registered') => consulApi.registerService(
-        {
-          registerConfig,
-          registerType,
-          noAlreadyRegisteredMessage: false,
-        },
-      ),
-      deregister: (svcId = serviceId) => consulApi.deregisterIfNeed(svcId),
+    minimizeApiCache();
+    apiCached[hash] = {
+      created: Date.now(),
+      api: {
+        consulApi,
+        consulAgentOptions,
+        consulUI,
+        registerConfig,
+        serviceId,
+        register: (registerType: TRegisterType = 'if-not-registered') => consulApi.registerService(
+          {
+            registerConfig,
+            registerType,
+            noAlreadyRegisteredMessage: false,
+          },
+        ),
+        deregister: (svcId = serviceId) => consulApi.deregisterIfNeed(svcId),
+      },
     };
   }
-  return apiCached;
+  return apiCached[hash].api;
 };

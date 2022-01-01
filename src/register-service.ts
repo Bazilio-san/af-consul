@@ -4,7 +4,7 @@ import { IGetRegisterConfigOptions } from './types';
 
 export async function reg(options: IGetRegisterConfigOptions) {
   const { register, consulUI } = await getAPI(options);
-  const registerResult = await register(options.force ? 'force' : 'if-not-registered');
+  const registerResult = await register(options.registerType || 'if-config-differ');
   if (registerResult) {
     options.logger?.info(`Consul UI: ${consulUI}`);
   }
@@ -17,8 +17,8 @@ export const registerService = {
       return 0;
     }
     let timerId: any;
-    const { timeout = 60_000 } = options;
-    options.force = true;
+    const { timeout = 60_000, registerType = 'if-config-differ' } = options;
+    options.registerType = 'force';
 
     if (!options.logger) {
       options.logger = loggerStub;
@@ -26,7 +26,7 @@ export const registerService = {
     const doLoop = async () => {
       try {
         await reg(options);
-        options.force = false;
+        options.registerType = registerType;
       } catch (err) {
         options.logger?.error(err);
       }

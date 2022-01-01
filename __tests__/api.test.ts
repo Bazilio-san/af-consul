@@ -5,8 +5,10 @@ import { IApi, IConsulServiceInfo } from '../src/types';
 import { ILoggerMocked, mockLogger } from './test-utils';
 import { getFQDN } from '../src';
 import { serviceConfigDiff } from '../src/utils';
+import { apiCached } from '../src/get-config';
+import { MAX_API_CACHED } from '../src/constants';
 
-const TIMEOUT_MILLIS = 30_000;
+const TIMEOUT_MILLIS = 100_000;
 
 const log: ILoggerMocked = mockLogger(logger);
 
@@ -37,7 +39,16 @@ describe('Test API', () => {
       Address: thisHost,
       // Datacenter: '???',
     };
-  });
+  }, TIMEOUT_MILLIS);
+
+  test('register', async () => {
+    expect(Object.keys(apiCached).length).toBe(1);
+    for (let i = 1; i < 6; i++) {
+      // eslint-disable-next-line no-await-in-loop
+      await getConsulAPI(i);
+    }
+    expect(Object.keys(apiCached).length).toBe(MAX_API_CACHED);
+  }, TIMEOUT_MILLIS);
 
   test('register', async () => {
     log.info.mockClear();

@@ -1,4 +1,4 @@
-import { IRegisterOptions, IConsulServiceInfo } from './types';
+import { IConsulServiceInfo, IRegisterOptions } from './types';
 
 export const removeAroundQuotas = (str: string): string => {
   if (!str) {
