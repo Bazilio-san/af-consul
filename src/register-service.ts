@@ -1,32 +1,33 @@
+// noinspection JSUnusedGlobalSymbols
+
 import loggerStub from './logger-stub';
 import { getAPI } from '../src';
-import { IGetRegisterConfigOptions } from './types';
+import { IGetRegisterConfigOptions, IRegisterCyclic } from './types';
 
-export async function reg(options: IGetRegisterConfigOptions) {
-  const { register, consulUI } = await getAPI(options);
-  const registerResult = await register(options.registerType || 'if-config-differ');
-  if (registerResult) {
-    options.logger?.info(`Consul UI: ${consulUI}`);
-  }
-}
-
-export const registerService = {
+export const registerCyclic: IRegisterCyclic = {
   isStarted: false,
-  async start(options: IGetRegisterConfigOptions): Promise<number> {
+  options: null,
+  async start(opt?: IGetRegisterConfigOptions): Promise<-1 | 0 | 1> {
+    if (!opt && !this.options) {
+      return -1;
+    }
     if (this.isStarted) {
       return 0;
     }
     let timerId: any;
-    const { timeout = 60_000, registerType = 'if-config-differ' } = options;
-    options.registerType = 'force';
+    const options = (opt || this.options) as IGetRegisterConfigOptions;
+    const { timeout = 60_000 } = options;
 
     if (!options.logger) {
       options.logger = loggerStub;
     }
+    const { consulApi, registerConfig, consulUI } = await getAPI(options);
+    options.logger?.info(`Consul UI: ${consulUI}`);
+
     const doLoop = async () => {
       try {
-        await reg(options);
-        options.registerType = registerType;
+        const registerType = this.isStarted ? (options?.registerType || 'if-config-differ') : 'force';
+        await consulApi.registerService({ registerConfig, registerType });
       } catch (err) {
         options.logger?.error(err);
       }

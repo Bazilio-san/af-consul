@@ -13,6 +13,7 @@ import { getFQDN } from './get-fqdn';
 import { getConsulApi } from './api';
 import { MAX_API_CACHED, PREFIX } from './constants';
 import { registerConfigHash } from './get-hash';
+import { registerCyclic } from './register-service';
 
 const mutex = new Mutex();
 
@@ -138,6 +139,7 @@ export const getAPI = async (options: IGetRegisterConfigOptions): Promise<IApi> 
     const { consulApi, consulAgentOptions } = await getConsulApiCached(options);
     const { registerConfig, consulUI, serviceId } = await getRegisterConfig(options);
     minimizeApiCache();
+    registerCyclic.options = options;
     apiCached[hash] = {
       created: Date.now(),
       api: {
@@ -153,6 +155,7 @@ export const getAPI = async (options: IGetRegisterConfigOptions): Promise<IApi> 
             noAlreadyRegisteredMessage: false,
           },
         ),
+        registerCyclic,
         deregister: (svcId = serviceId) => consulApi.deregisterIfNeed(svcId),
       },
     };

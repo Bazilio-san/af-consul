@@ -93,14 +93,14 @@ export interface IAPInAgentOptions {
   consulAgentOptions: IConsulAgentOptions;
 }
 
-interface IGetRegisterConfigOptions extends ICLOptions {
+export interface IGetRegisterConfigOptions extends ICLOptions {
   uiHost: string,
   dn: string,
   check?: IRegisterCheck,
   registerType?: TRegisterType
 }
 
-interface IRegisterConfig {
+export interface IRegisterConfig {
   registerConfig: IRegisterOptions,
   consulUI: string,
   serviceId: string
@@ -108,11 +108,12 @@ interface IRegisterConfig {
 
 export type IApi = IRegisterConfig & IAPInAgentOptions & {
   register: (registerType?: TRegisterType) => Promise<TRegisterServiceResult>,
+  registerCyclic: IRegisterCyclic,
   deregister: (svcId?: string) => Promise<boolean>,
 }
 
 
-interface IConsulServiceInfo {
+export interface IConsulServiceInfo {
   ID: string,
   Service: string,
   Tags?: string[],
@@ -125,4 +126,10 @@ interface IConsulServiceInfo {
   EnableTagOverride?: boolean,
   Datacenter?: string,
   [prop: string]: any,
+}
+
+export interface IRegisterCyclic {
+  isStarted: boolean,
+  options: IGetRegisterConfigOptions | null,
+  start: (opt?: IGetRegisterConfigOptions) => Promise<-1 | 0| 1>
 }
