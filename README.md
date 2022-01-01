@@ -40,9 +40,7 @@ const registerOptions = {
 import 'dotenv/config';
 import os from 'os';
 import { logger } from './logger';
-import { getConsulApiAndAgentOptions, getRegisterConfig } from '../src';
-
-let cf: any;
+import { getAPI } from '../src';
 
 const config = {
     consul: {
@@ -58,51 +56,41 @@ const config = {
             token: process.env.CONSUL_AGENT_TOKEN,
         },
         service: {
-            name: process.env.CONSUL_SERVICE_NAME || 'service-name',
-            instance: process.env.CONSUL_SERVICE_INSTANCE || 'inst',
-            version: process.env.CONSUL_SERVICE_VERSION || '0.0.0',
-            description: process.env.CONSUL_SERVICE_DESCRIPTION || 'test service',
+            name: process.env.CONSUL_SERVICE_NAME || 'af-consul',
+            instance: process.env.CONSUL_SERVICE_INSTANCE || 'test',
+            version: process.env.CONSUL_SERVICE_VERSION || '0.0.1',
+            description: process.env.CONSUL_SERVICE_DESCRIPTION || 'AF-CONSUL TEST',
             tags: process.env.CONSUL_SERVICE_TAGS || [
-                'anytag',
+                'af',
+                'consul',
+                'test',
             ],
-            meta: process.env.CONSUL_SERVICE_META || { project: 'myProject' },
+            meta: process.env.CONSUL_SERVICE_META || { CONSUL_TEST: 12345, line_yellow: 'straight' },
             host: process.env.CONSUL_SERVICE_HOST || null,
             port: process.env.CONSUL_SERVICE_PORT || null,
         },
     },
-    webServer: { host: process.env.WS_HOST || '0.0.0.0' },
+    webServer: {
+        host: process.env.WS_HOST || '0.0.0.0',
+        port: process.env.WS_PORT || '10000',
+    },
 };
 
-const initConsulAgent = async () => {
-    if (!cf) {
-        const { consulApi, consulAgentOptions } = getConsulApiAndAgentOptions({ config, logger });
-        const { consulUI, registerConfig, serviceId } = await getRegisterConfig({
-            config,
-            uiHost: 'consul.work',
-            dn: 'cep',
-        });
+const getConsulAPI = async () => getAPI(
+    {
+        config,
+        logger,
+        uiHost: process.env.CONSUL_UI_HOST || 'consul.work',
+        dn: process.env.CONSUL_DN || 'dn',
+    },
+);
 
-        logger.info(`CONSUL AGENT OPTIONS: \n${JSON.stringify(consulAgentOptions, undefined, 2)}`);
-        logger.info(`REGISTER CONFIG: \n${JSON.stringify(registerConfig, undefined, 2)}`);
 
-        cf = {
-            consulApi,
-            consulAgentOptions,
-            consulUI,
-            registerConfig,
-            serviceId,
-            registerService: (forceReRegister = false) => consulApi.registerService({ registerConfig, forceReRegister }),
-            deregister: (svcId = serviceId) => consulApi.deregisterIfNeed(svcId),
-        };
-    }
-    return cf;
-};
-
-initConsulAgent().then(({ registerService }) => {
-    registerService().then(() => null);
+getConsulAPI().then(({ register }) => {
+    register().then(() => null);
 });
 
-initConsulAgent().then(({ deregister }) => {
+getConsulAPI().then(({ deregister }) => {
     deregister().then(() => null);
 });
 

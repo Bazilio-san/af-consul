@@ -5,7 +5,7 @@ import { TLogLevelName } from 'tslog/src/interfaces';
 
 export const asyncLocalStorage: AsyncLocalStorage<{ requestId: string }> = new AsyncLocalStorage();
 
-class LoggerEx extends Logger {
+export class LoggerEx extends Logger {
   public isLevel(levelName: TLogLevelName): boolean {
     // @ts-ignore
     const { _logLevels: logLevels, settings: { minLevel } } = this;

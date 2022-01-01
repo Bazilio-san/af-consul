@@ -7,9 +7,10 @@ import { IApi,
   ICLOptions,
   IGetRegisterConfigOptions,
   IRegisterConfig,
-  IRegisterOptions } from './types';
+  IRegisterOptions,
+  TRegisterType } from './types';
 import { getFQDN } from './get-fqdn';
-import { getConsulApi } from './index';
+import { getConsulApi } from './api';
 import { PREFIX } from './constants';
 
 const mutex = new Mutex();
@@ -129,7 +130,13 @@ export const getAPI = async (options: IGetRegisterConfigOptions): Promise<IApi> 
       consulUI,
       registerConfig,
       serviceId,
-      registerService: (forceReRegister = false) => consulApi.registerService({ registerConfig, forceReRegister }),
+      register: (registerType: TRegisterType = 'if-not-registered') => consulApi.registerService(
+        {
+          registerConfig,
+          registerType,
+          noAlreadyRegisteredMessage: false,
+        },
+      ),
       deregister: (svcId = serviceId) => consulApi.deregisterIfNeed(svcId),
     };
   }

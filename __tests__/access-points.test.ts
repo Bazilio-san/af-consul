@@ -1,5 +1,6 @@
 import { AccessPoints } from '../src';
 import { logger } from './logger';
+import { setProperty } from './test-utils';
 
 const config = {
   accessPoints: {
@@ -36,12 +37,6 @@ const config = {
 };
 
 const cfg = { accessPoints: new AccessPoints(config.accessPoints) };
-
-const setProperty = (object: any, property: string, value: any) => {
-  const originalProperty = Object.getOwnPropertyDescriptor(object, property);
-  Object.defineProperty(object, property, { value });
-  return originalProperty;
-};
 
 const mockLoggerError = jest.fn((...args) => {
   logger.error(...args);

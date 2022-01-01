@@ -26,30 +26,30 @@ export interface IRegisterOptions extends Consul.Agent.Service.RegisterOptions {
 
 export interface IConsul extends Consul.Consul {
   _ext(eventName: 'onRequest' | 'onResponse', callback: (request: any, next: Function) => void): void;
+
+  _defaults: any;
+  _get: (...args: any[]) => any;
 }
+
+export type TRegisterType = 'if-not-registered' | 'if-config-differ' | 'force';
 
 export interface IServiceOptions {
   registerConfig: IRegisterOptions;
-  forceReRegister?: boolean;
+  registerType?: TRegisterType;
   noAlreadyRegisteredMessage?: boolean;
 }
 
 export interface IConsulAgentOptions extends Consul.ConsulOptions {
 }
 
+export type TLoggerMethod = (...args: unknown[]) => any;
+
 export interface ILogger {
-  /* eslint-disable no-unused-vars */
-  silly(...args: unknown[]): any;
-
-  debug(...args: unknown[]): any;
-
-  info(...args: unknown[]): any;
-
-  warn(...args: unknown[]): any;
-
-  error(...args: unknown[]): any;
-
-  /* eslint-enable no-unused-vars */
+  silly: TLoggerMethod;
+  debug: TLoggerMethod;
+  info: TLoggerMethod;
+  warn: TLoggerMethod;
+  error: TLoggerMethod;
 }
 
 export interface IConfig {
@@ -70,7 +70,21 @@ export interface ICLOptions {
   force?: boolean
 }
 
+export type TRegisterServiceResult = 'already' | 'just' | false;
+export type TCommonFnResult = any;
+
 export interface IConsulAPI {
+  agentServiceList: (withError?: boolean) => Promise<{ [serviceName: string]: IConsulServiceInfo }>,
+  consulHealthService: (options: Consul.Health.ServiceOptions, withError?: boolean) => Promise<TCommonFnResult>,
+  getServiceInfo: (serviceName: string, withError?: boolean) => Promise<any>,
+  getServiceSocket: (serviceName: string, defaults: ISocketInfo) => Promise<ISocketInfo>,
+  agentServiceRegister: (options: IRegisterOptions, withError?: boolean) => Promise<boolean>,
+  agentServiceDeregister: (serviceId: string, withError?: boolean) => Promise<TCommonFnResult>,
+  deregisterIfNeed: (serviceId: string) => Promise<boolean>,
+  agentMembers: (withError?: boolean) => Promise<TCommonFnResult>,
+  checkIfServiceRegistered: (serviceIdOrName: string) => Promise<boolean>,
+  registerService: (options: IServiceOptions) => Promise<TRegisterServiceResult>,
+
   [functionName: string]: (...args: any[]) => any,
 }
 
@@ -92,6 +106,22 @@ interface IRegisterConfig {
 }
 
 export type IApi = IRegisterConfig & IAPInAgentOptions & {
-  registerService: (forceReRegister?: boolean) => Promise<0 | 1 | 2>,
+  register: (registerType?: TRegisterType) => Promise<TRegisterServiceResult>,
   deregister: (svcId?: string) => Promise<boolean>,
+}
+
+
+interface IConsulServiceInfo {
+  ID: string,
+  Service: string,
+  Tags?: string[],
+  Meta?: {
+    [prop: string]: string | number | boolean | null,
+  },
+  Port: number,
+  Address: string,
+  Weights?: { Passing: number, Warning: number },
+  EnableTagOverride?: boolean,
+  Datacenter?: string,
+  [prop: string]: any,
 }

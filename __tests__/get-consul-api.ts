@@ -17,14 +17,16 @@ const config = {
       token: process.env.CONSUL_AGENT_TOKEN,
     },
     service: {
-      name: process.env.CONSUL_SERVICE_NAME || 'service-name',
-      instance: process.env.CONSUL_SERVICE_INSTANCE || 'inst',
-      version: process.env.CONSUL_SERVICE_VERSION || '0.0.0',
-      description: process.env.CONSUL_SERVICE_DESCRIPTION || 'test service',
+      name: process.env.CONSUL_SERVICE_NAME || 'af-consul',
+      instance: process.env.CONSUL_SERVICE_INSTANCE || 'test',
+      version: process.env.CONSUL_SERVICE_VERSION || '0.0.1',
+      description: process.env.CONSUL_SERVICE_DESCRIPTION || 'AF-CONSUL TEST',
       tags: process.env.CONSUL_SERVICE_TAGS || [
-        'anytag',
+        'af',
+        'consul',
+        'test',
       ],
-      meta: process.env.CONSUL_SERVICE_META || { project: 'myProject' },
+      meta: process.env.CONSUL_SERVICE_META || { CONSUL_TEST: 12345, line_yellow: 'straight' },
       host: process.env.CONSUL_SERVICE_HOST || null,
       port: process.env.CONSUL_SERVICE_PORT || null,
     },
@@ -39,7 +41,7 @@ export default async () => getAPI(
   {
     config,
     logger,
-    uiHost: 'consul.work',
-    dn: 'cep',
+    uiHost: process.env.CONSUL_UI_HOST || 'consul.work',
+    dn: process.env.CONSUL_DN || 'dn',
   },
 );

@@ -1,5 +1,7 @@
 /* eslint-disable no-console */
 import * as Consul from 'consul';
+// @ts-ignore
+import * as consulUtils from 'consul/lib/utils.js';
 import { cyan, magenta, reset, yellow } from './color';
 import getCurl from './get-curl-text';
 import getHttpRequestText from './get-http-request-text';
@@ -9,10 +11,12 @@ import { IConsul,
   ILogger,
   IRegisterOptions,
   IServiceOptions,
-  ISocketInfo } from './types';
+  ISocketInfo,
+  TRegisterServiceResult } from './types';
 import loggerStub from './logger-stub';
 import { getFQDN } from './get-fqdn';
 import { PREFIX } from './constants';
+import { serviceConfigDiff } from './utils';
 
 const DEBUG = (String(process.env.DEBUG || '')).trim();
 const dbg = { on: /\baf-consul/i.test(DEBUG), curl: /\baf-consul:curl/i.test(DEBUG) };
@@ -106,15 +110,36 @@ export const getConsulApi = (
 
   return {
     // Returns the services the agent is managing.  - список сервисов на этом агенте
-    agentServiceList(withError: boolean = false) {
+    async agentServiceList(withError: boolean = false) {
       return common('agent.service.list', { withError });
     },
 
     // Returns the nodes and health info of a service
-    consulHealthService(options: Consul.Health.ServiceOptions, withError: boolean = false) {
+    async consulHealthService(options: Consul.Health.ServiceOptions, withError: boolean = false) {
       return common('health.service', {
         options,
         withError,
+      });
+    },
+
+    async getServiceInfo(serviceName: string, withError: boolean = false) {
+      const fnName = 'agent.service.info';
+      return new Promise((resolve, reject) => {
+        let opts = { id: serviceName };
+        opts = consulUtils.defaults(opts, consulInstance._defaults);
+        const req = {
+          name: 'agent.service.info',
+          path: '/agent/service/{id}',
+          params: { id: serviceName },
+        };
+        consulUtils.options(req, opts);
+        consulInstance._get(req, consulUtils.body, (err: Error | any, res: any) => {
+          if (err) {
+            logger.error(`[consul.${fnName}] ERROR:\n  err.message: ${err.message}\n  err.stack:\n${err.stack}\n`);
+            return withError ? reject(err) : resolve(false);
+          }
+          resolve(res);
+        });
       });
     },
 
@@ -145,8 +170,9 @@ export const getConsulApi = (
         port: Port,
       };
     },
+
     // Registers a new service.
-    agentServiceRegister(options: IRegisterOptions, withError: boolean = false) {
+    async agentServiceRegister(options: IRegisterOptions, withError: boolean = false): Promise<boolean> {
       return common('agent.service.register', {
         options,
         withError,
@@ -155,22 +181,12 @@ export const getConsulApi = (
     },
 
     // Deregister a service.
-    agentServiceDeregister(serviceId: string, withError: boolean = false) {
+    async agentServiceDeregister(serviceId: string, withError: boolean = false): Promise<boolean> {
       return common('agent.service.deregister', {
         options: serviceId,
         withError,
         result: true,
       });
-    },
-
-    // Returns the members as seen by the consul agent. - список агентов (нод)
-    agentMembers: (withError: boolean = false) => common('agent.members', { withError }),
-
-    async checkIfServiceRegistered(serviceIdOrName: string): Promise<boolean> {
-      const agentServiceListR = await this.agentServiceList();
-      return agentServiceListR
-        && Object.values(agentServiceListR)
-          .some(({ ID: i, Service: s }: any) => i === serviceIdOrName || s === serviceIdOrName);
     },
 
     async deregisterIfNeed(serviceId: string): Promise<boolean> {
@@ -189,27 +205,51 @@ export const getConsulApi = (
       return true;
     },
 
-    async registerService(options: IServiceOptions): Promise<0 | 1 | 2> {
-      const { registerConfig, forceReRegister = true, noAlreadyRegisteredMessage = false } = options;
-      const serviceId = registerConfig.id || registerConfig.name;
+    // Returns the members as seen by the consul agent. - список агентов (нод)
+    agentMembers: async (withError: boolean = false) => common('agent.members', { withError }),
 
-      const isAlreadyRegistered = await this.checkIfServiceRegistered(serviceId);
-      if (isAlreadyRegistered && !forceReRegister) {
-        if (!noAlreadyRegisteredMessage) {
-          logger.info(`Service '${cyan}${serviceId}${reset}' already registered in Consul`);
+    async checkIfServiceRegistered(serviceIdOrName: string): Promise<boolean> {
+      const agentServiceListR = await this.agentServiceList();
+      return agentServiceListR
+        && Object.values(agentServiceListR)
+          .some(({ ID: i, Service: s }: any) => i === serviceIdOrName || s === serviceIdOrName);
+    },
+
+    async registerService(options: IServiceOptions): Promise<TRegisterServiceResult> {
+      const { registerConfig, registerType = 'if-not-registered', noAlreadyRegisteredMessage = false } = options;
+
+      const serviceId = registerConfig.id || registerConfig.name;
+      const srv = `Service '${cyan}${serviceId}${reset}'`;
+      let isAlreadyRegistered = false;
+      if (registerType !== 'force') {
+        if (registerType === 'if-not-registered') {
+          isAlreadyRegistered = await this.checkIfServiceRegistered(serviceId);
+        } else { // registerType === 'if-config-differ'
+          const serviceInfo = await this.getServiceInfo(serviceId);
+          const diff = serviceConfigDiff(registerConfig, serviceInfo);
+          isAlreadyRegistered = diff.length === 0;
+          if (diff.length) {
+            logger.info(`${srv}. Configuration difference detected. New: config.${diff[0]}=${diff[1]} / Current: config.${diff[2]}=${diff[3]}`);
+          }
         }
-        return 2;
+        if (isAlreadyRegistered) {
+          if (!noAlreadyRegisteredMessage) {
+            logger.info(`${srv} already registered in Consul`);
+          }
+          return 'already';
+        }
       }
+
       if (isAlreadyRegistered && (await this.agentServiceDeregister(serviceId))) {
-        logger.info(`Previous registration of service '${cyan}${serviceId}${reset}' removed from Consul`);
+        logger.info(`Previous registration of ${srv} removed from Consul`);
       }
       const isJustRegistered = await this.agentServiceRegister(registerConfig);
       if (isJustRegistered) {
-        logger.info(`Service '${cyan}${serviceId}${reset}' is registered in Consul`);
+        logger.info(`${srv} is registered in Consul`);
       } else {
-        logger.error(`Service '${cyan}${serviceId}${reset}' is NOT registered in Consul`);
+        logger.error(`${srv} is NOT registered in Consul`);
       }
-      return isJustRegistered ? 1 : 0;
+      return isJustRegistered ? 'just' : false;
     },
   };
 };

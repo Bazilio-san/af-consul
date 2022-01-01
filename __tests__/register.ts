@@ -2,8 +2,8 @@
 import getConsulAPI from './get-consul-api';
 
 const registerInConsul = async () => {
-  const { registerService, consulUI } = await getConsulAPI();
-  const isRegistered = await registerService();
+  const { register, consulUI } = await getConsulAPI();
+  const isRegistered = await register();
   if (isRegistered) {
     console.log(`Consul UI: ${consulUI}`);
   }
