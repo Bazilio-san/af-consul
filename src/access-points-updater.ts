@@ -27,7 +27,7 @@ function retrieveProps(accessPoint: IAccessPoint, host: string, meta: any) {
 export async function updateAccessPoint(clOptions: ICLOptions, accessPoint: IAccessPoint) {
   const { consulApi } = await getConsulApiCached(clOptions);
   if (!consulApi) {
-    clOptions.logger?.warn(`${PREFIX}: Не удалось получить consul API`);
+    clOptions.logger?.warn(`${PREFIX}: Failed to get consul API`);
     return;
   }
   if (!accessPoint.updateIntervalIfSuccessMillis) {
@@ -64,9 +64,8 @@ export async function updateAccessPoints(clOptions: ICLOptions) {
   const { accessPoints } = clOptions.config;
   await Promise.all(Object.values(<IAccessPoints>accessPoints).filter(({ isAP }: any) => isAP)
     .map((accessPoint) => updateAccessPoint(clOptions, <IAccessPoint>accessPoint)));
-  if (clOptions.em?.emit) {
-    clOptions.em.emit('start-push-service');
-  }
+  clOptions.logger?.debug(`${PREFIX}: updated`);
+  clOptions.em?.emit('access-points-updated');
 }
 
 export const accessPointsUpdater = {
