@@ -53,7 +53,7 @@ export const getHash = (data: any, base: '32' | '64' = '32', seed: number = 0xCA
 };
 
 export const registerConfigHash = (options: IGetRegisterConfigOptions): string => {
-  const opt = _.pick(options, ['config', 'timeout', ' uiHost', 'dn', 'check', 'registerType']);
+  const opt = _.pick(options, ['config', ' uiHost', 'dn', 'check', 'registerType']);
   opt.config = _.pick(opt.config, ['consul', 'webServer']) as IConfig;
   return getHash(opt);
 };

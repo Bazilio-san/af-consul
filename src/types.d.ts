@@ -56,7 +56,11 @@ export interface IConfig {
   accessPoints?: IAccessPoints,
   consul: {
     agent: any,
-    healthCheck?: any,
+    healthCheck?: {
+      interval?: string,
+      timeout?: string,
+      deregistercriticalserviceafter?: string,
+    },
     service: any,
   },
   webServer: any,
@@ -66,7 +70,8 @@ export interface ICLOptions {
   config: IConfig,
   logger?: ILogger,
   em?: EventEmitter,
-  timeout?: number
+  registerInterval?: number
+  accessPointsUpdateInterval?: number
   force?: boolean
 }
 
@@ -96,7 +101,7 @@ export interface IAPInAgentOptions {
 export interface IGetRegisterConfigOptions extends ICLOptions {
   uiHost: string,
   dn: string,
-  check?: IRegisterCheck,
+  check?: IRegisterCheck, // Альтернатива config.consul.healthCheck (который ограничен в значениях). Если указано, то имеет высокий приоритет.
   registerType?: TRegisterType
 }
 
@@ -130,6 +135,9 @@ export interface IConsulServiceInfo {
 
 export interface IRegisterCyclic {
   isStarted: boolean,
+  skipNextUntil: number,
+  healthCheckIntervalMillis: number,
+  registerIntervalMillis: number,
   options: IGetRegisterConfigOptions | null,
   start: (opt?: IGetRegisterConfigOptions) => Promise<-1 | 0| 1>
 }

@@ -24,17 +24,17 @@ function retrieveProps(accessPoint: IAccessPoint, host: string, meta: any) {
   return { host, port };
 }
 
-export async function updateAccessPoint(clOptions: ICLOptions, accessPoint: IAccessPoint) {
+export async function updateAccessPoint(clOptions: ICLOptions, accessPoint: IAccessPoint): Promise<-2 | -1 | 0 | 1> {
   const { consulApi } = await getConsulApiCached(clOptions);
   if (!consulApi) {
     clOptions.logger?.warn(`${PREFIX}: Failed to get consul API`);
-    return;
+    return -2;
   }
   if (!accessPoint.updateIntervalIfSuccessMillis) {
     accessPoint.updateIntervalIfSuccessMillis = UPDATE_INTERVAL_IF_SUCCESS_MILLIS;
   }
   if (Date.now() - (accessPoint.lastSuccessUpdate || 0) < accessPoint.updateIntervalIfSuccessMillis) {
-    return;
+    return 0;
   }
   const { consulServiceName } = accessPoint;
 
@@ -46,7 +46,7 @@ export async function updateAccessPoint(clOptions: ICLOptions, accessPoint: IAcc
   if (!host || !meta) {
     debug(`${red}There is no information for ${CONSUL_ID}`);
     accessPoint.lastSuccessUpdate = 0;
-    return;
+    return -1;
   }
   accessPoint.lastSuccessUpdate = Date.now();
 
@@ -58,14 +58,18 @@ export async function updateAccessPoint(clOptions: ICLOptions, accessPoint: IAcc
   if (!changes?.length) {
     debug(`${green}The data is up-to-date ${CONSUL_ID}`);
   }
+  return 1;
 }
 
 export async function updateAccessPoints(clOptions: ICLOptions) {
   const { accessPoints } = clOptions.config;
-  await Promise.all(Object.values(<IAccessPoints>accessPoints).filter(({ isAP }: any) => isAP)
+  const result = await Promise.all(Object.values(<IAccessPoints>accessPoints).filter(({ isAP }: any) => isAP)
     .map((accessPoint) => updateAccessPoint(clOptions, <IAccessPoint>accessPoint)));
-  clOptions.logger?.debug(`${PREFIX}: updated`);
-  clOptions.em?.emit('access-points-updated');
+  const updatedCount = result.filter((v) => v > 0);
+  if (updatedCount) {
+    clOptions.logger?.debug(`${PREFIX}: updated ${updatedCount} access point(s)`);
+    clOptions.em?.emit('access-points-updated');
+  }
 }
 
 export const accessPointsUpdater = {
@@ -75,7 +79,7 @@ export const accessPointsUpdater = {
       return 0;
     }
     let timerId: any;
-    const { config, timeout = 10_000 } = clOptions;
+    const { config, accessPointsUpdateInterval = 10_000 } = clOptions;
     const { accessPoints } = config;
 
     let { logger } = clOptions;
@@ -89,7 +93,7 @@ export const accessPointsUpdater = {
         logger?.error(err);
       }
       clearTimeout(timerId);
-      timerId = setTimeout(doLoop, timeout);
+      timerId = setTimeout(doLoop, accessPointsUpdateInterval);
     };
     doLoop().then((r) => r);
     this.isStarted = true;
