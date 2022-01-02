@@ -5,18 +5,22 @@ import * as consulUtils from 'consul/lib/utils.js';
 import { cyan, magenta, reset, yellow } from './color';
 import getCurl from './get-curl-text';
 import getHttpRequestText from './get-http-request-text';
-import { IConsul,
+import {
+  ICLOptions,
+  IConfig,
+  IConsul,
   IConsulAgentOptions,
-  IConsulAPI,
+  IConsulAPI, IConsulServiceInfo,
   ILogger,
   IRegisterOptions,
   IServiceOptions,
-  ISocketInfo,
-  TRegisterServiceResult } from './types';
+  ISocketInfo, Maybe,
+  TRegisterServiceResult,
+} from './types';
 import loggerStub from './logger-stub';
 import { getFQDN } from './get-fqdn';
 import { PREFIX } from './constants';
-import { serviceConfigDiff } from './utils';
+import { parseBoolean, serviceConfigDiff } from './utils';
 
 const DEBUG = (String(process.env.DEBUG || '')).trim();
 const dbg = { on: /\baf-consul/i.test(DEBUG), curl: /\baf-consul:curl/i.test(DEBUG) };
@@ -26,18 +30,25 @@ const debug = (msg: string) => {
   }
 };
 
+const getConsulAgentOptionsByConfig = async (config: IConfig): Promise<IConsulAgentOptions> => {
+  const { host, port, secure, token } = config.consul.agent;
+  const host_ = host || (await getFQDN()) || process.env.HOST_HOSTNAME || config.consul.service?.host;
+  return {
+    host: host_,
+    port,
+    secure: parseBoolean(secure),
+    defaults: token ? { token } : undefined,
+  };
+};
+
 let requestCounter = 0;
 
-export const getConsulApi = (
-  {
-    consulAgentOptions,
-    logger,
-  }: { consulAgentOptions: IConsulAgentOptions; logger?: ILogger | any },
-): IConsulAPI => {
+export const prepareConsulAPI = async (clOptions: ICLOptions): Promise<IConsulAPI> => {
+  let logger = (clOptions.logger || loggerStub) as ILogger;
   if (!logger?.info) {
     logger = loggerStub;
   }
-
+  const consulAgentOptions: IConsulAgentOptions = await getConsulAgentOptionsByConfig(clOptions.config);
   if (dbg.on) {
     debug(`CONSUL AGENT OPTIONS:\n${JSON.stringify(consulAgentOptions, undefined, 2)}`);
   }
@@ -108,7 +119,9 @@ export const getConsulApi = (
     });
   }
 
-  return {
+  const api = {
+    agentOptions: consulAgentOptions,
+
     // Returns the services the agent is managing.  - список сервисов на этом агенте
     async agentServiceList(withError: boolean = false) {
       return common('agent.service.list', { withError });
@@ -122,7 +135,8 @@ export const getConsulApi = (
       });
     },
 
-    async getServiceInfo(serviceName: string, withError: boolean = false) {
+    // eslint-disable-next-line no-undef
+    async getServiceInfo(serviceName: string, withError: boolean = false): Promise<Maybe<IConsulServiceInfo>> {
       const fnName = 'agent.service.info';
       return new Promise((resolve, reject) => {
         let opts = { id: serviceName };
@@ -136,7 +150,7 @@ export const getConsulApi = (
         consulInstance._get(req, consulUtils.body, (err: Error | any, res: any) => {
           if (err) {
             logger.error(`[consul.${fnName}] ERROR:\n  err.message: ${err.message}\n  err.stack:\n${err.stack}\n`);
-            return withError ? reject(err) : resolve(false);
+            return withError ? reject(err) : resolve(undefined);
           }
           resolve(res);
         });
@@ -252,4 +266,6 @@ export const getConsulApi = (
       return isJustRegistered ? 'just' : false;
     },
   };
+  api.getConsulAgentOptionsByConfig = getConsulAgentOptionsByConfig;
+  return api;
 };

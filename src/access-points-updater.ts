@@ -5,7 +5,7 @@ import { cyan, green, magenta, red, reset } from './color';
 import loggerStub from './logger-stub';
 import { IAccessPoint, IAccessPoints } from './access-points';
 import { getConsulApiCached } from '../src';
-import { ICLOptions } from './types';
+import { ICLOptions, IConsulAPI } from './types';
 
 const PREFIX = 'AP-UPDATER';
 
@@ -25,7 +25,7 @@ function retrieveProps(accessPoint: IAccessPoint, host: string, meta: any) {
 }
 
 export async function updateAccessPoint(clOptions: ICLOptions, accessPoint: IAccessPoint): Promise<-2 | -1 | 0 | 1> {
-  const { consulApi } = await getConsulApiCached(clOptions);
+  const consulApi: IConsulAPI = await getConsulApiCached(clOptions);
   if (!consulApi) {
     clOptions.logger?.warn(`${PREFIX}: Failed to get consul API`);
     return -2;

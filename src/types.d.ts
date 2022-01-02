@@ -2,6 +2,8 @@ import Consul from "consul";
 import { IAccessPoints } from "./access-points";
 import EventEmitter from "events";
 
+export type Maybe<T> = T | undefined;
+
 export interface ISocketInfo {
   host: string;
   port: string | number;
@@ -17,8 +19,8 @@ export interface IRegisterCheck extends Consul.Agent.Service.RegisterCheck {
 }
 
 export interface IRegisterOptions extends Consul.Agent.Service.RegisterOptions {
-  check?: IRegisterCheck | undefined;
-  checks?: IRegisterCheck[] | undefined;
+  check?: IRegisterCheck;
+  checks?: IRegisterCheck[];
   connect?: any;
   proxy?: any;
   taggedAddresses?: any;
@@ -78,10 +80,14 @@ export interface ICLOptions {
 export type TRegisterServiceResult = 'already' | 'just' | false;
 export type TCommonFnResult = any;
 
+type TProperty = any;
+type TMethod = (...args: any[]) => any;
+
 export interface IConsulAPI {
+  agentOptions: IConsulAgentOptions,
   agentServiceList: (withError?: boolean) => Promise<{ [serviceName: string]: IConsulServiceInfo }>,
   consulHealthService: (options: Consul.Health.ServiceOptions, withError?: boolean) => Promise<TCommonFnResult>,
-  getServiceInfo: (serviceName: string, withError?: boolean) => Promise<any>,
+  getServiceInfo: (serviceName: string, withError?: boolean) => Promise<Maybe<IConsulServiceInfo>>,
   getServiceSocket: (serviceName: string, defaults: ISocketInfo) => Promise<ISocketInfo>,
   agentServiceRegister: (options: IRegisterOptions, withError?: boolean) => Promise<boolean>,
   agentServiceDeregister: (serviceId: string, withError?: boolean) => Promise<TCommonFnResult>,
@@ -90,12 +96,7 @@ export interface IConsulAPI {
   checkIfServiceRegistered: (serviceIdOrName: string) => Promise<boolean>,
   registerService: (options: IServiceOptions) => Promise<TRegisterServiceResult>,
 
-  [functionName: string]: (...args: any[]) => any,
-}
-
-export interface IAPInAgentOptions {
-  consulApi: IConsulAPI;
-  consulAgentOptions: IConsulAgentOptions;
+  [functionName: string]: TProperty | TMethod,
 }
 
 export interface IGetRegisterConfigOptions extends ICLOptions {
@@ -111,7 +112,8 @@ export interface IRegisterConfig {
   serviceId: string
 }
 
-export type IApi = IRegisterConfig & IAPInAgentOptions & {
+export type IApi = IRegisterConfig & {
+  consulApi: IConsulAPI,
   register: (registerType?: TRegisterType) => Promise<TRegisterServiceResult>,
   registerCyclic: IRegisterCyclic,
   deregister: (svcId?: string) => Promise<boolean>,

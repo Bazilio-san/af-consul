@@ -2,15 +2,17 @@
 
 import { Mutex } from 'async-mutex';
 import { parseBoolean, parseMeta, parseTags, removeAroundQuotas } from './utils';
-import { IApi,
-  IAPInAgentOptions,
-  ICLOptions,
+import {
+  IApi,
+  ICLOptions, IConfig, IConsulAgentOptions,
+  IConsulAPI,
   IGetRegisterConfigOptions,
   IRegisterConfig,
   IRegisterOptions,
-  TRegisterType } from './types';
+  TRegisterType,
+} from './types';
 import { getFQDN } from './get-fqdn';
-import { getConsulApi } from './api';
+import { prepareConsulAPI } from './prepare-consul-api';
 import { MAX_API_CACHED, PREFIX } from './constants';
 import { registerConfigHash } from './get-hash';
 import { registerCyclic } from './register-service';
@@ -31,33 +33,31 @@ export const getServiceID = (name: string, instance: string, dn: string, uiHost:
   };
 };
 
-export const getConsulApiAndAgentOptions = async (clOptions: ICLOptions): Promise<IAPInAgentOptions> => {
-  const { config, logger } = clOptions;
+export const getConsulAgentOptionsByConfig = async (config: IConfig): Promise<IConsulAgentOptions> => {
   const { host, port, secure, token } = config.consul.agent;
-
-  const consulAgentOptions = {
-    host: host || (await getFQDN()) || process.env.HOST_HOSTNAME || config.consul.service?.host,
+  const host_ = host || (await getFQDN()) || process.env.HOST_HOSTNAME || config.consul.service?.host;
+  return {
+    host: host_,
     port,
     secure: parseBoolean(secure),
     defaults: token ? { token } : undefined,
   };
-  return {
-    consulApi: getConsulApi({ consulAgentOptions, logger }),
-    consulAgentOptions,
-  };
 };
 
-let APInAgentOptionsCached: IAPInAgentOptions;
-
-const getConsulApiCached_ = async (clOptions: ICLOptions): Promise<IAPInAgentOptions> => {
-  if (!APInAgentOptionsCached) {
-    APInAgentOptionsCached = await getConsulApiAndAgentOptions(clOptions);
-  }
-  return APInAgentOptionsCached;
+export const prepareConsulApiByCLOptions = async (clOptions: ICLOptions): Promise<IConsulAPI> => {
+  const consulAgentOptions = await getConsulAgentOptionsByConfig(clOptions.config);
+  return prepareConsulAPI({ consulAgentOptions, logger: clOptions.logger });
 };
 
-export const getConsulApiCached = async (clOptions: ICLOptions): Promise<IAPInAgentOptions> => mutex
-  .runExclusive<IAPInAgentOptions>(async () => getConsulApiCached_(clOptions));
+let consulAPICached: IConsulAPI;
+
+export const getConsulApiCached = async (clOptions: ICLOptions): Promise<IConsulAPI> => mutex
+  .runExclusive<IConsulAPI>(async () => {
+    if (!consulAPICached) {
+      consulAPICached = await prepareConsulApiByCLOptions(clOptions);
+    }
+    return consulAPICached;
+  });
 
 export const getRegisterConfig = async (options: IGetRegisterConfigOptions): Promise<IRegisterConfig> => {
   const { config, uiHost, dn } = options;
@@ -136,7 +136,7 @@ const minimizeApiCache = () => {
 export const getAPI = async (options: IGetRegisterConfigOptions): Promise<IApi> => {
   const hash = registerConfigHash(options);
   if (!apiCached[hash]) {
-    const { consulApi, consulAgentOptions } = await getConsulApiCached(options);
+    const consulApi: IConsulAPI = await getConsulApiCached(options);
     const { registerConfig, consulUI, serviceId } = await getRegisterConfig(options);
     minimizeApiCache();
     registerCyclic.options = options;
@@ -144,7 +144,6 @@ export const getAPI = async (options: IGetRegisterConfigOptions): Promise<IApi> 
       created: Date.now(),
       api: {
         consulApi,
-        consulAgentOptions,
         consulUI,
         registerConfig,
         serviceId,

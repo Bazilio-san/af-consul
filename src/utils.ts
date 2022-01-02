@@ -1,4 +1,4 @@
-import { IConsulServiceInfo, IRegisterOptions } from './types';
+import { IConsulServiceInfo, IRegisterOptions, Maybe } from './types';
 
 export const removeAroundQuotas = (str: string): string => {
   if (!str) {
@@ -75,7 +75,10 @@ export const parseTags = (t: any): string[] => {
   return [];
 };
 
-export const serviceConfigDiff = (registerConfig: IRegisterOptions, serviceInfo: IConsulServiceInfo): any[] => {
+export const serviceConfigDiff = (registerConfig: IRegisterOptions, serviceInfo: Maybe<IConsulServiceInfo>): any[] => {
+  if (!serviceInfo) {
+    return ['id', registerConfig.id, 'ID', undefined];
+  }
   const mastBeEquals = [['id', 'ID'], ['name', 'Service'], ['port', 'Port'], ['address', 'Address']];
   let diff: any[] = [];
   mastBeEquals.some(([p1, p2]) => {
