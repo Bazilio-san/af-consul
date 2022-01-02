@@ -1,4 +1,5 @@
-import { IConsulServiceInfo, IRegisterOptions, Maybe } from './types';
+import * as fs from 'fs';
+import { ICache, IConsulServiceInfo, IRegisterConfig, Maybe } from './types';
 
 export const removeAroundQuotas = (str: string): string => {
   if (!str) {
@@ -21,9 +22,11 @@ export const parseBoolean = (bv: any): boolean => {
   return !/^(false|no|0)$/i.test(bv.trim().toLowerCase());
 };
 
-export const parseMeta = (m: string | object) => {
+export const parseMeta = (m: string | object | undefined) => {
   const metaData = {};
-
+  if (!m) {
+    return metaData;
+  }
   const fillMetaData = (o: object) => {
     Object.entries(o).forEach(([k, v]) => {
       if (!['string', 'number'].includes(typeof v)) {
@@ -75,7 +78,7 @@ export const parseTags = (t: any): string[] => {
   return [];
 };
 
-export const serviceConfigDiff = (registerConfig: IRegisterOptions, serviceInfo: Maybe<IConsulServiceInfo>): any[] => {
+export const serviceConfigDiff = (registerConfig: IRegisterConfig, serviceInfo: Maybe<IConsulServiceInfo>): any[] => {
   if (!serviceInfo) {
     return ['id', registerConfig.id, 'ID', undefined];
   }
@@ -100,4 +103,40 @@ export const serviceConfigDiff = (registerConfig: IRegisterOptions, serviceInfo:
     });
   }
   return diff;
+};
+
+export const minimizeCache = <T>(cache: ICache<T>, maxItems: number) => {
+  const len = Object.keys(cache).length;
+  if (len >= maxItems) {
+    const sortedDesc = Object.entries(cache)
+      .sort((a, b) => b[1].created - a[1].created);
+    sortedDesc.splice(0, maxItems - 1);
+    sortedDesc.map(([h]) => h).forEach((h) => {
+      delete cache[h];
+    });
+  }
+};
+
+/**
+ * String in format \d+(s|m) in milliseconds
+ */
+export const toMills = (timeStr: string = ''): number => {
+  const re = /^(\d+)([sm])$/;
+  const matches = re.exec(timeStr);
+  if (!matches) {
+    return 0;
+  }
+  return Number(matches[1]) * 1000 * (matches[2] === 's' ? 1 : 60);
+};
+
+export const getPackageJson = (relPathToProjRoot: string = '') => {
+  try {
+    const rootDir = process.cwd();
+    const packageJson = `${rootDir}${relPathToProjRoot}/package.json`;
+    if (fs.existsSync(packageJson)) {
+      return JSON.parse(fs.readFileSync(packageJson, { encoding: 'utf8' }));
+    }
+  } catch (err) {
+    //
+  }
 };

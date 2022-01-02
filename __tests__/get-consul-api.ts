@@ -3,10 +3,11 @@ import * as _ from 'lodash';
 import os from 'os';
 import { logger } from './logger';
 import { getAPI } from '../src';
+import { IApi } from '../src/types';
 
 const cfg = {
   consul: {
-    healthCheck: {
+    check: {
       interval: process.env.CONSUL_HEALTH_CHECK_INTERVAL || '10s',
       timeout: process.env.CONSUL_HEALTH_CHECK_TMEOUT || '5s',
       deregistercriticalserviceafter: process.env.CONSUL_DEREGISTER_CRITICAL_SERVICE_AFTER || '3m',
@@ -38,17 +39,18 @@ const cfg = {
   },
 };
 
-export default async (instanceNum?: number) => {
+export default async (instanceSuffix: string = ''): Promise<IApi> => {
   const config = _.cloneDeep(cfg);
-  if (instanceNum) {
-    config.consul.service.instance += String(instanceNum);
+  if (instanceSuffix) {
+    config.consul.service.instance += instanceSuffix;
+  } else {
+    config.consul.service.instance = cfg.consul.service.instance;
   }
   return getAPI(
     {
       config,
       logger,
-      uiHost: process.env.CONSUL_UI_HOST || 'consul.work',
-      dn: process.env.CONSUL_DN || 'dn',
+      projectId: process.env.PROJECT_ID || 'proj',
     },
   );
 };

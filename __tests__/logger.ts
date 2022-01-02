@@ -1,3 +1,5 @@
+// noinspection JSUnusedGlobalSymbols
+
 import { AsyncLocalStorage } from 'async_hooks';
 import { Logger } from 'tslog';
 // eslint-disable-next-line import/no-unresolved

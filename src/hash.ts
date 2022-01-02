@@ -1,6 +1,6 @@
 import * as _ from 'lodash';
 import * as XXH from 'xxhashjs';
-import { IConfig, IGetRegisterConfigOptions } from './types';
+import { ICLOptions, IConfig } from './types';
 
 const isObject = (v: any): boolean => v != null
   && typeof v === 'object'
@@ -9,7 +9,7 @@ const isObject = (v: any): boolean => v != null
   && !(v instanceof Set)
   && !(v instanceof Map);
 
-export const getHash = (data: any, base: '32' | '64' = '32', seed: number = 0xCAFEBABE) => {
+const getHash = (data: any, base: '32' | '64' = '32', seed: number = 0xCAFEBABE) => {
   let stringToHash = '';
   if (data === undefined) {
     stringToHash = '#thisisundefined#';
@@ -52,8 +52,8 @@ export const getHash = (data: any, base: '32' | '64' = '32', seed: number = 0xCA
   return XXH[`h${base}`](stringToHash, seed).toString(16);
 };
 
-export const registerConfigHash = (options: IGetRegisterConfigOptions): string => {
-  const opt = _.pick(options, ['config', ' uiHost', 'dn', 'check', 'registerType']);
+export const getConfigHash = (options: ICLOptions): string => {
+  const opt = _.pick(options, ['config', 'projectId']);
   opt.config = _.pick(opt.config, ['consul', 'webServer']) as IConfig;
   return getHash(opt);
 };

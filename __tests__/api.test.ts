@@ -1,11 +1,11 @@
 /* eslint-disable no-console */
 import getConsulAPI from './get-consul-api';
 import { logger } from './logger';
-import { IApi, IConsulServiceInfo } from '../src/types';
+import { IApi, IConsulServiceInfo, Maybe } from '../src/types';
 import { ILoggerMocked, mockLogger } from './test-utils';
-import { getFQDN } from '../src';
+import { getFQDNCached } from '../src';
 import { serviceConfigDiff } from '../src/utils';
-import { apiCached } from '../src/get-config';
+import { apiCache } from '../src/get-api';
 import { MAX_API_CACHED } from '../src/constants';
 
 const TIMEOUT_MILLIS = 100_000;
@@ -15,12 +15,12 @@ const log: ILoggerMocked = mockLogger(logger);
 let api: IApi;
 let thisHost: string;
 let expectedServiceIfo: IConsulServiceInfo;
-let serviceInfo: IConsulServiceInfo;
+let serviceInfo: Maybe<IConsulServiceInfo>;
 
 describe('Test API', () => {
   beforeAll(async () => {
     api = await getConsulAPI();
-    thisHost = await getFQDN() || '';
+    thisHost = await getFQDNCached() || '';
     expectedServiceIfo = {
       ID: 'dev-cepe01-af-consul-test',
       Service: 'dev-cepe01-af-consul-test',
@@ -32,6 +32,7 @@ describe('Test API', () => {
         instance: 'test',
         line_yellow: 'straight',
         name: 'af-consul',
+        pj_name: 'af-consul',
         port: '10000',
         version: '0.0.1',
       },
@@ -42,32 +43,30 @@ describe('Test API', () => {
   }, TIMEOUT_MILLIS);
 
   test('register', async () => {
-    expect(Object.keys(apiCached).length).toBe(1);
+    expect(Object.keys(apiCache).length).toBe(1);
     for (let i = 1; i < 6; i++) {
       // eslint-disable-next-line no-await-in-loop
-      await getConsulAPI(i);
+      await getConsulAPI(String(i));
+      console.log(api.serviceId);
     }
-    expect(Object.keys(apiCached).length).toBe(MAX_API_CACHED);
+    expect(Object.keys(apiCache).length).toBe(MAX_API_CACHED);
   }, TIMEOUT_MILLIS);
 
   test('register', async () => {
     log.info.mockClear();
-    const registerResult = await api.register();
-    if (registerResult) {
-      console.log(`Consul UI: ${api.consulUI}`);
-    }
+    const registerResult = await api.register.once();
     expect(!!registerResult).toBe(true);
     expect(log.info.mock.calls.length).toBeGreaterThan(0);
     expect(log.info.mock.calls[0][0]).toMatch(/Service.+(is|already) registered in Consul/);
   }, TIMEOUT_MILLIS);
 
   test('agentServiceList', async () => {
-    const agentServiceList = await api.consulApi.agentServiceList();
+    const agentServiceList = await api.agentServiceList();
     expect(agentServiceList[api.serviceId]).toMatchObject(expectedServiceIfo);
   }, TIMEOUT_MILLIS);
 
   test('getServiceInfo', async () => {
-    serviceInfo = await api.consulApi.getServiceInfo(api.serviceId);
+    serviceInfo = await api.getServiceInfo(api.serviceId);
     expect(serviceInfo).toMatchObject(expectedServiceIfo);
   }, TIMEOUT_MILLIS);
 

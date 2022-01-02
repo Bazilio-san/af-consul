@@ -1,11 +1,13 @@
 /* eslint-disable no-console */
+// noinspection JSUnusedGlobalSymbols
+
 import getConsulAPI from './get-consul-api';
 
 const registerInConsul = async () => {
-  const { register, consulUI } = await getConsulAPI();
-  const isRegistered = await register();
+  const api = await getConsulAPI();
+  const isRegistered = await api.register.once();
   if (isRegistered) {
-    console.log(`Consul UI: ${consulUI}`);
+    console.log(`Registered ${api.serviceId}`);
   }
 };
 registerInConsul().then((r) => r);

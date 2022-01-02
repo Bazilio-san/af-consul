@@ -1,15 +1,6 @@
-import { getFQDN } from './get-fqdn';
-import { getAPI, prepareConsulApiByCLOptions, getConsulApiCached, getRegisterConfig, getServiceID } from './get-config';
-import { prepareConsulAPI } from './prepare-consul-api';
-
+export { getFQDN, getFQDNCached } from './fqdn';
+export { getRegisterConfig, getServiceID } from './get-register-config';
+export { getConsulApiCached, prepareConsulAPI } from './prepare-consul-api';
 export { AccessPoints } from './access-points';
 export { accessPointsUpdater } from './access-points-updater';
-export {
-  getServiceID,
-  getFQDN,
-  prepareConsulApiByCLOptions,
-  getConsulApiCached,
-  getRegisterConfig,
-  getAPI,
-  prepareConsulAPI,
-};
+export { getAPI } from './get-api';

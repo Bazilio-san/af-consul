@@ -32,9 +32,7 @@ const registerOptions = {
 
 ```
 
-
 #### Usage example
-
 
 ```ts
 import 'dotenv/config';
@@ -44,7 +42,7 @@ import { getAPI } from '../src';
 
 const config = {
     consul: {
-        healthCheck: {
+        check: {
             interval: process.env.CONSUL_HEALTH_CHECK_INTERVAL || '10s',
             timeout: process.env.CONSUL_HEALTH_CHECK_TMEOUT || '5s',
             deregistercriticalserviceafter: process.env.CONSUL_DEREGISTER_CRITICAL_SERVICE_AFTER || '3m',
@@ -80,14 +78,13 @@ const getConsulAPI = async () => getAPI(
     {
         config,
         logger,
-        uiHost: process.env.CONSUL_UI_HOST || 'consul.work',
-        dn: process.env.CONSUL_DN || 'dn',
+        projectId: process.env.PROJECT_ID || 'proj',
     },
 );
 
 
 getConsulAPI().then(({ register }) => {
-    register().then(() => null);
+    register.once().then(() => null);
 });
 
 getConsulAPI().then(({ deregister }) => {

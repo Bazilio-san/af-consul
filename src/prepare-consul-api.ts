@@ -1,26 +1,33 @@
 /* eslint-disable no-console */
+// noinspection UnnecessaryLocalVariableJS,JSUnusedGlobalSymbols
+
 import * as Consul from 'consul';
+import { Mutex } from 'async-mutex';
 // @ts-ignore
 import * as consulUtils from 'consul/lib/utils.js';
 import { cyan, magenta, reset, yellow } from './color';
-import getCurl from './get-curl-text';
-import getHttpRequestText from './get-http-request-text';
+import getCurl from './curl-text';
+import getHttpRequestText from './http-request-text';
 import {
   ICLOptions,
   IConfig,
   IConsul,
   IConsulAgentOptions,
-  IConsulAPI, IConsulServiceInfo,
+  IConsulAPI,
+  IConsulServiceInfo,
   ILogger,
+  IRegisterConfig,
   IRegisterOptions,
-  IServiceOptions,
-  ISocketInfo, Maybe,
-  TRegisterServiceResult,
+  ISocketInfo,
+  Maybe,
+  TRegisterResult,
 } from './types';
 import loggerStub from './logger-stub';
-import { getFQDN } from './get-fqdn';
+import { getFQDNCached } from './fqdn';
 import { PREFIX } from './constants';
 import { parseBoolean, serviceConfigDiff } from './utils';
+
+const mutex = new Mutex();
 
 const DEBUG = (String(process.env.DEBUG || '')).trim();
 const dbg = { on: /\baf-consul/i.test(DEBUG), curl: /\baf-consul:curl/i.test(DEBUG) };
@@ -30,12 +37,12 @@ const debug = (msg: string) => {
   }
 };
 
-const getConsulAgentOptionsByConfig = async (config: IConfig): Promise<IConsulAgentOptions> => {
+const getConsulAgentOptions = async (config: IConfig): Promise<IConsulAgentOptions> => {
   const { host, port, secure, token } = config.consul.agent;
-  const host_ = host || (await getFQDN()) || process.env.HOST_HOSTNAME || config.consul.service?.host;
+  const host_ = host || (await getFQDNCached()) || process.env.HOST_HOSTNAME || config.consul.service?.host || '127.0.0.1';
   return {
     host: host_,
-    port,
+    port: String(port || 8500),
     secure: parseBoolean(secure),
     defaults: token ? { token } : undefined,
   };
@@ -48,7 +55,7 @@ export const prepareConsulAPI = async (clOptions: ICLOptions): Promise<IConsulAP
   if (!logger?.info) {
     logger = loggerStub;
   }
-  const consulAgentOptions: IConsulAgentOptions = await getConsulAgentOptionsByConfig(clOptions.config);
+  const consulAgentOptions: IConsulAgentOptions = await getConsulAgentOptions(clOptions.config);
   if (dbg.on) {
     debug(`CONSUL AGENT OPTIONS:\n${JSON.stringify(consulAgentOptions, undefined, 2)}`);
   }
@@ -120,8 +127,6 @@ export const prepareConsulAPI = async (clOptions: ICLOptions): Promise<IConsulAP
   }
 
   const api = {
-    agentOptions: consulAgentOptions,
-
     // Returns the services the agent is managing.  - список сервисов на этом агенте
     async agentServiceList(withError: boolean = false) {
       return common('agent.service.list', { withError });
@@ -178,7 +183,7 @@ export const prepareConsulAPI = async (clOptions: ICLOptions): Promise<IConsulAP
       }] = result;
       const foundAddress = Address || Node;
 
-      const host = await getFQDN(foundAddress);
+      const host = await getFQDNCached(foundAddress);
       return {
         host: host || foundAddress,
         port: Port,
@@ -186,7 +191,7 @@ export const prepareConsulAPI = async (clOptions: ICLOptions): Promise<IConsulAP
     },
 
     // Registers a new service.
-    async agentServiceRegister(options: IRegisterOptions, withError: boolean = false): Promise<boolean> {
+    async agentServiceRegister(options: IRegisterConfig, withError: boolean = false): Promise<boolean> {
       return common('agent.service.register', {
         options,
         withError,
@@ -229,14 +234,13 @@ export const prepareConsulAPI = async (clOptions: ICLOptions): Promise<IConsulAP
           .some(({ ID: i, Service: s }: any) => i === serviceIdOrName || s === serviceIdOrName);
     },
 
-    async registerService(options: IServiceOptions): Promise<TRegisterServiceResult> {
-      const { registerConfig, registerType = 'if-not-registered', noAlreadyRegisteredMessage = false } = options;
-
+    async registerService(registerConfig: IRegisterConfig, registerOptions: IRegisterOptions): Promise<TRegisterResult> {
+      const { registerType, noAlreadyRegisteredMessage } = registerOptions;
       const serviceId = registerConfig.id || registerConfig.name;
       const srv = `Service '${cyan}${serviceId}${reset}'`;
       let isAlreadyRegistered = false;
       if (registerType !== 'force') {
-        if (registerType === 'if-not-registered') {
+        if (!registerType || registerType === 'if-not-registered') {
           isAlreadyRegistered = await this.checkIfServiceRegistered(serviceId);
         } else { // registerType === 'if-config-differ'
           const serviceInfo = await this.getServiceInfo(serviceId);
@@ -265,7 +269,18 @@ export const prepareConsulAPI = async (clOptions: ICLOptions): Promise<IConsulAP
       }
       return isJustRegistered ? 'just' : false;
     },
+    agentOptions: consulAgentOptions,
+    getConsulAgentOptions,
   };
-  api.getConsulAgentOptionsByConfig = getConsulAgentOptionsByConfig;
   return api;
 };
+
+let consulAPICached: IConsulAPI;
+
+export const getConsulApiCached = async (clOptions: ICLOptions): Promise<IConsulAPI> => mutex
+  .runExclusive<IConsulAPI>(async () => {
+    if (!consulAPICached) {
+      consulAPICached = await prepareConsulAPI(clOptions);
+    }
+    return consulAPICached;
+  });

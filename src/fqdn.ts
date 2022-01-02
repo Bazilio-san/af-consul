@@ -1,5 +1,7 @@
 import * as os from 'os';
 import * as dns from 'dns';
+import { ICache } from './types';
+import { minimizeCache } from './utils';
 
 // Returns fully qualified domain name
 export const getFQDN = (h?: string, withError?: boolean, onlyDomain?: boolean): Promise<string | null> => {
@@ -21,4 +23,21 @@ export const getFQDN = (h?: string, withError?: boolean, onlyDomain?: boolean): 
       });
     });
   });
+};
+
+const fqdnCache: ICache<string> = {};
+
+export const getFQDNCached = async (...args: any[]): Promise<string | null> => {
+  const hostNameOrIP = args[0] || os.hostname() || '-';
+  minimizeCache(fqdnCache, 10);
+  if (!fqdnCache[hostNameOrIP]) {
+    const fqdn = await getFQDN(...args);
+    if (fqdn) {
+      fqdnCache[hostNameOrIP] = {
+        created: Date.now(),
+        value: fqdn,
+      };
+    }
+  }
+  return fqdnCache[hostNameOrIP]?.value || null;
 };
