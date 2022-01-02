@@ -1,37 +1,21 @@
 import loggerStub from './logger-stub';
 import { blue, cyan, green, magenta, reset } from './color';
-import { ILogger } from './types';
+import { IAccessPoint, IAccessPoints, ILogger, Maybe } from './types';
+import { isObject } from './utils';
 
 const PREFIX = 'ACCESS-POINT';
 
-export interface IAccessPoint {
-  consulServiceName: string,
-  id?: string,
-  title?: string,
-  port?: number | null,
-  host?: string | null,
-  setProps?: (data: Record<string, any> | null) => IAccessPoint | undefined,
-  isAP?: true,
-  lastSuccessUpdate?: number,
-  getChanges?: () => [string, any, any][] | undefined,
-  retrieveProps?: (host: string, meta: Record<string, any>) => Record<string, any>,
-
-  [propName: string]: any
-}
-
-export type IMayBeAccessPoint = IAccessPoint | undefined;
-
-export type IAccessPoints = { [apKey: string]: IAccessPoint } & { logger: ILogger };
+const _logger_ = Symbol.for('_logger_');
 
 // eslint-disable-next-line import/prefer-default-export
 export class AccessPoints {
-  logger: any;
+  private readonly [_logger_]: ILogger;
 
-  constructor(accessPoints: { [s: string]: Record<string, any>; }, logger: any = loggerStub) {
-    this.logger = logger;
+  constructor(accessPoints: IAccessPoints, logger?: ILogger) {
+    this[_logger_] = logger || loggerStub;
     if (!accessPoints) {
       const msg = 'Empty argument "accessPoints" passed to constructor';
-      this.logger.error(msg);
+      this[_logger_].error(msg);
       throw new Error(msg);
     }
     Object.entries(accessPoints).forEach(([apKey, apData]) => {
@@ -76,12 +60,12 @@ export class AccessPoints {
     return accessPoint;
   }
 
-  addAP(apKey: string, apData: Record<string, any> | null): IMayBeAccessPoint {
-    if (!apData) {
+  addAP(apKey: string, apData: any): Maybe<IAccessPoint> {
+    if (!apData || !isObject(apData)) {
       return undefined;
     }
     if (!apData.consulServiceName) {
-      this.logger.error(`"${apKey}" access point not added because it lacks "consulServiceName" property`);
+      this[_logger_].error(`"${apKey}" access point not added because it lacks "consulServiceName" property`);
       return undefined;
     }
     const accessPoint: Record<string, any> = {};
@@ -98,7 +82,7 @@ export class AccessPoints {
     return AccessPoints.getPureProps(accessPoint);
   }
 
-  setAP(apKey: string, apData: Record<string, any> | null): IMayBeAccessPoint {
+  setAP(apKey: string, apData: Record<string, any> | null): Maybe<IAccessPoint> {
     if (!apData) {
       return undefined;
     }
@@ -134,14 +118,14 @@ export class AccessPoints {
       accessPoint[propName] = newV;
     });
     if (was.length) {
-      this.logger.info(`${PREFIX}: Change AP for ${cyan}${accessPoint.consulServiceName}${reset} to ${became.join('; ')}  from  ${was.join('; ')}`);
+      this[_logger_].info(`${PREFIX}: Change AP for ${cyan}${accessPoint.consulServiceName}${reset} to ${became.join('; ')}  from  ${was.join('; ')}`);
     }
     const result = AccessPoints.getPureProps(accessPoint);
     result.getChanges = () => (changes.length ? changes : undefined);
     return result;
   }
 
-  getAP(accessPointKey: string): IMayBeAccessPoint {
+  getAP(accessPointKey: string): Maybe<IAccessPoint> {
     if (accessPointKey) {
       const accessPoint = this[accessPointKey];
       if (!accessPoint?.isAP) {
@@ -165,7 +149,7 @@ export class AccessPoints {
       return AccessPoints.getPureProps(accessPoint);
     }
     const accessPoints = Object.create(null);
-    Object.values(this).filter(({ isAP }) => isAP).forEach((accessPoint) => {
+    Object.values(this).filter((ap) => ap?.isAP).forEach((accessPoint) => {
       accessPoints[accessPoint.id] = AccessPoints.getPureProps(accessPoint);
     });
     return accessPoints;

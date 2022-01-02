@@ -3,9 +3,8 @@
 
 import { cyan, green, magenta, red, reset } from './color';
 import loggerStub from './logger-stub';
-import { IAccessPoint, IAccessPoints } from './access-points';
 import { getConsulApiCached } from '../src';
-import { ICLOptions, IConsulAPI } from './types';
+import { IAccessPoint, IAccessPoints, ICLOptions, IConsulAPI } from './types';
 
 const PREFIX = 'AP-UPDATER';
 
@@ -63,7 +62,7 @@ export async function updateAccessPoint(clOptions: ICLOptions, accessPoint: IAcc
 
 export async function updateAccessPoints(clOptions: ICLOptions) {
   const { accessPoints } = clOptions.config;
-  const result = await Promise.all(Object.values(<IAccessPoints>accessPoints).filter(({ isAP }: any) => isAP)
+  const result = await Promise.all(Object.values(<IAccessPoints>accessPoints).filter((ap: any) => ap?.isAP)
     .map((accessPoint) => updateAccessPoint(clOptions, <IAccessPoint>accessPoint)));
   const updatedCount = result.filter((v) => v > 0);
   if (updatedCount) {
@@ -74,18 +73,12 @@ export async function updateAccessPoints(clOptions: ICLOptions) {
 
 export const accessPointsUpdater = {
   isStarted: false,
-  async start(clOptions: ICLOptions): Promise<number> {
+  async start(clOptions: ICLOptions, updateInterval: number = 10_000): Promise<number> {
     if (this.isStarted) {
       return 0;
     }
     let timerId: any;
-    const { config, accessPointsUpdateInterval = 10_000 } = clOptions;
-    const { accessPoints } = config;
-
-    let { logger } = clOptions;
-    if (!logger) {
-      logger = accessPoints?.logger ?? loggerStub;
-    }
+    const logger = clOptions.logger || loggerStub;
     const doLoop = async () => {
       try {
         await updateAccessPoints(clOptions);
@@ -93,7 +86,7 @@ export const accessPointsUpdater = {
         logger?.error(err);
       }
       clearTimeout(timerId);
-      timerId = setTimeout(doLoop, accessPointsUpdateInterval);
+      timerId = setTimeout(doLoop, updateInterval);
     };
     doLoop().then((r) => r);
     this.isStarted = true;

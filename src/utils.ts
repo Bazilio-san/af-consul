@@ -140,3 +140,10 @@ export const getPackageJson = (relPathToProjRoot: string = '') => {
     //
   }
 };
+
+export const isObject = (v: any): boolean => v != null
+  && typeof v === 'object'
+  && !Array.isArray(v)
+  && !(v instanceof Date)
+  && !(v instanceof Set)
+  && !(v instanceof Map);

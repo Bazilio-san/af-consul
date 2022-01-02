@@ -1,13 +1,7 @@
 import * as _ from 'lodash';
 import * as XXH from 'xxhashjs';
 import { ICLOptions, IConfig } from './types';
-
-const isObject = (v: any): boolean => v != null
-  && typeof v === 'object'
-  && !Array.isArray(v)
-  && !(v instanceof Date)
-  && !(v instanceof Set)
-  && !(v instanceof Map);
+import { isObject } from './utils';
 
 const getHash = (data: any, base: '32' | '64' = '32', seed: number = 0xCAFEBABE) => {
   let stringToHash = '';

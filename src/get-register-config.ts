@@ -70,22 +70,18 @@ export const getRegisterConfig = async (options: ICLOptions): Promise<IRegisterC
     id: serviceId,
     name: serviceId,
     port,
-    address, // VVQ Добавить версию AF-Consul, добавить версию продукта
+    address,
     tags,
     meta: { ...metaObj, ...meta },
   };
-  let { check } = config.consul || {};
-  if (!check) {
-    check = {
-      interval: '10s',
-      timeout: '5s',
-      deregistercriticalserviceafter: '3m',
-    };
-  }
-  if (!check.name) {
-    check.name = `Service '${name}-${instance}'`;
-  }
-  if (!check.http && !check.tcp && !check.script && !check.shell) {
+  const check = { ...(config.consul?.check || {}) };
+  [['name', `Service '${name}-${instance}'`], ['timeout', '5s'], ['deregistercriticalserviceafter', '3m']]
+    .forEach(([n, v]) => {
+      if (!check[n]) {
+        check[n] = v;
+      }
+    });
+  if (!(check.http || check.tcp || check.script || check.shell)) {
     check.http = `http://${address}:${port}/health`;
   }
   if ((check.http || check.script) && !check.interval) {

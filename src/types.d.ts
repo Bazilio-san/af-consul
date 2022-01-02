@@ -1,5 +1,4 @@
 import Consul from "consul";
-import { IAccessPoints } from "./access-points";
 import EventEmitter from "events";
 
 export type Maybe<T> = T | undefined;
@@ -60,6 +59,25 @@ export interface ILogger {
   error: TLoggerMethod;
 }
 
+export interface IAccessPoint {
+  consulServiceName: string,
+  id?: string,
+  title?: string,
+  port?: number | null,
+  host?: string | null,
+  setProps?: (data: Record<string, any> | null) => IAccessPoint | undefined,
+  isAP?: true,
+  lastSuccessUpdate?: number,
+  getChanges?: () => [string, any, any][] | undefined,
+  retrieveProps?: (host: string, meta: Record<string, any>) => Record<string, any>,
+
+  [propName: string]: any
+}
+
+export interface IAccessPoints {
+  [apKey: string]: IAccessPoint;
+}
+
 export interface IConfig {
   accessPoints?: IAccessPoints,
   consul: {
@@ -89,15 +107,11 @@ export interface ICLOptions {
   logger?: ILogger,
   em?: EventEmitter,
 
-  accessPointsUpdateInterval?: number // VVR перенсти в ap.config
   projectId?: string,
   getConsulUIAddress?: TMethod<string>,
 }
 
 export type TCommonFnResult = any;
-
-// type TProperty = any; VVR
-// [functionName: string]: TProperty | TMethod<any>, VVR
 
 type TMethod<T> = (...args: any[]) => T;
 

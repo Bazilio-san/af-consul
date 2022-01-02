@@ -45,9 +45,10 @@ const mockLoggerError = jest.fn((...args) => {
 const mockLoggerInfo = jest.fn((...args) => {
   logger.info(...args);
 });
+const _logger_ = Symbol.for('_logger_');
 
-setProperty(cfg.accessPoints.logger, 'error', mockLoggerError);
-setProperty(cfg.accessPoints.logger, 'info', mockLoggerInfo);
+setProperty(cfg.accessPoints[_logger_], 'error', mockLoggerError);
+setProperty(cfg.accessPoints[_logger_], 'info', mockLoggerInfo);
 
 describe('Access Points test', () => {
   test('Checking the initial state of all AP', () => {
