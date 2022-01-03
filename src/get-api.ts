@@ -37,7 +37,7 @@ export const getAPI = async (options: ICLOptions): Promise<IApi> => {
         once: async (registerType: TRegisterType = 'if-not-registered') => api.registerService(registerConfig, { registerType }),
         cyclic: getRegisterCyclic(options, api, registerConfig),
       },
-      deregister: (svcId = serviceId) => api.deregisterIfNeed(svcId),
+      deregister: (svcId) => api.deregisterIfNeed(svcId || serviceId),
     } as IApi;
 
     Object.entries(api).forEach(([k, v]) => {
