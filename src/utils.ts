@@ -22,7 +22,20 @@ export const parseBoolean = (bv: any): boolean => {
   return !/^(false|no|0)$/i.test(bv.trim().toLowerCase());
 };
 
-export const parseMeta = (m: string | object | undefined) => {
+export const substitute = (meta: object, data: object): void => {
+  const re = /%{([^}]+)}/g;
+  Object.entries(meta).forEach(([k, v]) => {
+    if (typeof v === 'string') {
+      const matches = [...v.matchAll(re)];
+      matches.forEach(([found, propName]) => {
+        const substitution = String(data[propName] || '');
+        meta[k] = meta[k].replace(found, substitution);
+      });
+    }
+  });
+};
+
+export const parseMeta = (m: string | object | undefined, data: object) => {
   const metaData = {};
   if (!m) {
     return metaData;
@@ -61,6 +74,7 @@ export const parseMeta = (m: string | object | undefined) => {
   } else if (typeof m === 'object' && !Array.isArray(m)) {
     fillMetaData(m);
   }
+  substitute(metaData, data);
   return metaData;
 };
 

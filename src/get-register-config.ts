@@ -23,7 +23,6 @@ export const getRegisterConfig = async (options: ICLOptions): Promise<IRegisterC
   if (projectId) {
     tags.push(projectId);
   }
-  meta = parseMeta(meta);
   port = Number(port) || Number(webServer.port);
   if (!port) {
     throw new Error(`${PREFIX}: Port is empty!`);
@@ -36,6 +35,9 @@ export const getRegisterConfig = async (options: ICLOptions): Promise<IRegisterC
     throw new Error(`${PREFIX}: Address is empty!`);
   }
 
+  meta = parseMeta(meta, {
+    serviceId, name, instance, address, port,
+  });
   const metaObj: Record<string, string> = {
     host: address,
     port: String(port),
