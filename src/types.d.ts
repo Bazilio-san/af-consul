@@ -109,6 +109,7 @@ export interface ICLOptions {
 
   projectId?: string,
   getConsulUIAddress?: TMethod<string>,
+  hash?: string,
 }
 
 export type TCommonFnResult = any;

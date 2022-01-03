@@ -9,6 +9,7 @@ import { cyan, magenta, reset, yellow } from './color';
 import getCurl from './curl-text';
 import getHttpRequestText from './http-request-text';
 import {
+  ICache,
   ICLOptions,
   IConfig,
   IConsul,
@@ -24,8 +25,9 @@ import {
 } from './types';
 import loggerStub from './logger-stub';
 import { getFQDNCached } from './fqdn';
-import { PREFIX } from './constants';
-import { parseBoolean, serviceConfigDiff } from './utils';
+import { MAX_API_CACHED, PREFIX } from './constants';
+import { minimizeCache, parseBoolean, serviceConfigDiff } from './utils';
+import { getConfigHash } from './hash';
 
 const mutex = new Mutex();
 
@@ -275,12 +277,15 @@ export const prepareConsulAPI = async (clOptions: ICLOptions): Promise<IConsulAP
   return api;
 };
 
-let consulAPICached: IConsulAPI;
+const consulApiCache: ICache<IConsulAPI> = {};
 
 export const getConsulApiCached = async (clOptions: ICLOptions): Promise<IConsulAPI> => mutex
   .runExclusive<IConsulAPI>(async () => {
-    if (!consulAPICached) {
-      consulAPICached = await prepareConsulAPI(clOptions);
+    const hash = getConfigHash(clOptions);
+    if (!consulApiCache[hash]) {
+      minimizeCache(consulApiCache, MAX_API_CACHED);
+      const value = await prepareConsulAPI(clOptions);
+      consulApiCache[hash] = { created: Date.now(), value };
     }
-    return consulAPICached;
+    return consulApiCache[hash].value;
   });

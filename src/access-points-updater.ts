@@ -23,12 +23,9 @@ function retrieveProps(accessPoint: IAccessPoint, host: string, meta: any) {
   return { host, port };
 }
 
+let cache = {};
+
 export async function updateAccessPoint(clOptions: ICLOptions, accessPoint: IAccessPoint): Promise<-2 | -1 | 0 | 1> {
-  const consulApi: IConsulAPI = await getConsulApiCached(clOptions);
-  if (!consulApi) {
-    clOptions.logger?.warn(`${PREFIX}: Failed to get consul API`);
-    return -2;
-  }
   if (!accessPoint.updateIntervalIfSuccessMillis) {
     accessPoint.updateIntervalIfSuccessMillis = UPDATE_INTERVAL_IF_SUCCESS_MILLIS;
   }
@@ -36,14 +33,26 @@ export async function updateAccessPoint(clOptions: ICLOptions, accessPoint: IAcc
     return 0;
   }
   const { consulServiceName } = accessPoint;
-
   const CONSUL_ID = `${cyan}${consulServiceName}${reset}`;
-  debug(`${reset}Polling ${CONSUL_ID}`);
-  const result = await consulApi.consulHealthService({ service: consulServiceName, passing: true });
+  let result = cache[consulServiceName];
+  if (result) {
+    if (!result.length) {
+      return 0;
+    }
+  } else {
+    const consulApi: IConsulAPI = await getConsulApiCached(clOptions);
+    if (!consulApi) {
+      clOptions.logger?.warn(`${PREFIX}: Failed to get consul API`);
+      return -2;
+    }
+    debug(`${reset}Polling ${CONSUL_ID}`);
+    result = await consulApi.consulHealthService({ service: consulServiceName, passing: true });
+    cache[consulServiceName] = result;
+  }
 
   const { Address: host, Meta: meta } = result?.[0]?.Service || {};
   if (!host || !meta) {
-    debug(`${red}There is no information for ${CONSUL_ID}`);
+    clOptions.logger?.warn(`${red}There is no information for ${CONSUL_ID}`);
     accessPoint.lastSuccessUpdate = 0;
     return -1;
   }
@@ -61,9 +70,14 @@ export async function updateAccessPoint(clOptions: ICLOptions, accessPoint: IAcc
 }
 
 export async function updateAccessPoints(clOptions: ICLOptions) {
-  const { accessPoints } = clOptions.config;
-  const result = await Promise.all(Object.values(<IAccessPoints>accessPoints).filter((ap: any) => ap?.isAP)
-    .map((accessPoint) => updateAccessPoint(clOptions, <IAccessPoint>accessPoint)));
+  const accessPoints = Object.values(<IAccessPoints>clOptions.config.accessPoints).filter((ap: any) => ap?.isAP);
+  const result = [];
+  for (let i = 0; i < accessPoints.length; i++) {
+    const accessPoint: IAccessPoint = accessPoints[i];
+    // eslint-disable-next-line no-await-in-loop
+    const res = await updateAccessPoint(clOptions, accessPoint);
+    result.push(res);
+  }
   const updatedCount = result.filter((v) => v > 0);
   if (updatedCount) {
     clOptions.logger?.debug(`${PREFIX}: updated ${updatedCount} access point(s)`);
@@ -81,6 +95,7 @@ export const accessPointsUpdater = {
     const logger = clOptions.logger || loggerStub;
     const doLoop = async () => {
       try {
+        cache = {};
         await updateAccessPoints(clOptions);
       } catch (err) {
         logger?.error(err);
