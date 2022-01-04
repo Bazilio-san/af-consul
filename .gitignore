@@ -28,3 +28,4 @@ local*.*
 /yarn.lock
 /.env
 **/dist
+/_log/

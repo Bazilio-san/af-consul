@@ -1,25 +1,28 @@
-// noinspection JSUnusedGlobalSymbols
+import { getAFLogger } from 'af-logger';
 
-import { AsyncLocalStorage } from 'async_hooks';
-import { Logger } from 'tslog';
-// eslint-disable-next-line import/no-unresolved
-import { TLogLevelName } from 'tslog/src/interfaces';
+const minLevel = 'silly';
+const prefix = 'af-consul';
+const logDir = './_log';
 
-export const asyncLocalStorage: AsyncLocalStorage<{ requestId: string }> = new AsyncLocalStorage();
+const loggerSettings = {
+  minLevel,
+  name: prefix,
+  filePrefix: prefix,
+  logDir,
+  minLogSize: 0,
+  minErrorLogSize: 0,
+  // displayLoggerName: true,
+  // displayFunctionName: true,
+  // displayFilePath: 'displayAll',
+  // emitter: em,
+  fileLoggerMap: {
+    silly: 'info',
+    info: 'info',
+    error: 'error',
+    fatal: 'error',
+  },
+};
 
-export class LoggerEx extends Logger {
-  public isLevel(levelName: TLogLevelName): boolean {
-    // @ts-ignore
-    const { _logLevels: logLevels, settings: { minLevel } } = this;
-    return logLevels.indexOf(levelName) >= logLevels.indexOf(minLevel);
-  }
-}
+const { logger } = getAFLogger(loggerSettings);
 
-export const logger = new LoggerEx({
-  name: 'af-consul',
-  displayLoggerName: false,
-  displayFunctionName: false,
-  displayFilePath: 'hidden',
-  minLevel: 'silly' as TLogLevelName,
-  requestId: (): string => asyncLocalStorage.getStore()?.requestId as string,
-});
+export { logger };

@@ -1,5 +1,5 @@
 import { ILogObject } from 'tslog/src/interfaces';
-import { LoggerEx } from './logger';
+import { LoggerEx } from 'af-logger';
 import { TLoggerMethod } from '../src/types';
 import Mock = jest.Mock;
 
