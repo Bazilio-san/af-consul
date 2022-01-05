@@ -1,6 +1,6 @@
 {
   "name": "af-consul",
-  "version": "1.0.86",
+  "version": "1.0.87",
   "description": "A highly specialized function library",
   "main": "./dist/cjs/src/index.js",
   "module": "./dist/esm/index.js",
@@ -30,7 +30,7 @@
     "@types/xxhashjs": "^0.2.2",
     "@typescript-eslint/eslint-plugin": "^5.8.1",
     "@typescript-eslint/parser": "^5.8.1",
-    "af-logger": "^2.0.9",
+    "af-logger": "^2.0.15",
     "dotenv": "^10.0.0",
     "eslint": "^8.5.0",
     "eslint-config-airbnb-base": "^15.0.0",
