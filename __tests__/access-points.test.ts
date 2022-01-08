@@ -200,7 +200,7 @@ describe('Access Points test', () => {
     const ap = cfg.accessPoints.getAP('wso2siAPI') as IAccessPoint;
     setTimeout(() => {
       ap.setProps?.({ host: 'new-host' });
-    }, 2000);
+    }, 1000);
     const isUpdated = await ap.waitForHostPortUpdated?.(10_000);
     expect(isUpdated).toBe(true);
   }, 15_000);
