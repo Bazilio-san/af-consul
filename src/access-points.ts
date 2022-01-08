@@ -1,11 +1,25 @@
+/* eslint-disable no-await-in-loop */
 import loggerStub from './logger-stub';
 import { blue, cyan, green, magenta, reset } from './color';
 import { IAccessPoint, IAccessPoints, ILogger, Maybe } from './types';
-import { isObject } from './utils';
+import { isObject, sleep } from './utils';
 
 const PREFIX = 'ACCESS-POINT';
 
 const _logger_ = Symbol.for('_logger_');
+
+const addAdditionalAPProps = (accessPoint: Record<string, any>) => {
+  Object.defineProperty(accessPoint, 'isAP', { value: true });
+  Object.defineProperty(accessPoint, 'lastSuccessUpdate', { value: 0, writable: true });
+  Object.defineProperty(accessPoint, 'idHostPortUpdated', { value: false, writable: true });
+  accessPoint.waitForHostPortUpdated = async (timeout: number = 10_000): Promise<boolean> => {
+    const start = Date.now();
+    while (!accessPoint.idHostPortUpdated && (Date.now() - start < timeout)) {
+      await sleep(100);
+    }
+    return !!accessPoint.idHostPortUpdated;
+  };
+};
 
 // eslint-disable-next-line import/prefer-default-export
 export class AccessPoints {
@@ -69,8 +83,8 @@ export class AccessPoints {
       return undefined;
     }
     const accessPoint: Record<string, any> = {};
-    Object.defineProperty(accessPoint, 'isAP', { value: true });
-    Object.defineProperty(accessPoint, 'lastSuccessUpdate', { value: 0, writable: true });
+    addAdditionalAPProps(accessPoint);
+
     this[apKey] = accessPoint;
     Object.entries(apData).forEach(([propName, v]) => {
       accessPoint[propName] = AccessPoints.normalizeValue(propName, v);
@@ -92,8 +106,7 @@ export class AccessPoints {
     }
     /* istanbul ignore if */
     if (!accessPoint.isAP) {
-      Object.defineProperty(accessPoint, 'isAP', { value: true });
-      Object.defineProperty(accessPoint, 'lastSuccessUpdate', { value: 0, writable: true });
+      addAdditionalAPProps(accessPoint);
     }
     const was: string[] = [];
     const became: string[] = [];
@@ -120,6 +133,10 @@ export class AccessPoints {
     if (was.length) {
       this[_logger_].info(`${PREFIX}: Change AP for ${cyan}${accessPoint.consulServiceName}${reset} to ${became.join('; ')}  from  ${was.join('; ')}`);
     }
+
+    accessPoint.idHostPortUpdated = accessPoint.idHostPortUpdated
+      || !!(accessPoint.host && accessPoint.port && (apData.host || apData.port));
+
     const result = AccessPoints.getPureProps(accessPoint);
     result.getChanges = () => (changes.length ? changes : undefined);
     return result;

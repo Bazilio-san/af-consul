@@ -5,6 +5,7 @@ import { cyan, green, magenta, red, reset } from './color';
 import loggerStub from './logger-stub';
 import { getConsulApiCached } from '../src';
 import { IAccessPoint, IAccessPoints, ICLOptions, IConsulAPI } from './types';
+import { sleep } from './utils';
 
 const PREFIX = 'AP-UPDATER';
 
@@ -17,11 +18,6 @@ const debug = (msg: string) => {
 };
 
 const UPDATE_INTERVAL_IF_SUCCESS_MILLIS = 2 * 60_000;
-
-function retrieveProps(accessPoint: IAccessPoint, host: string, meta: any) {
-  const port = Number(meta.port) || accessPoint.port;
-  return { host, port };
-}
 
 let cache = {};
 
@@ -57,12 +53,7 @@ export async function updateAccessPoint(clOptions: ICLOptions, accessPoint: IAcc
     return -1;
   }
   accessPoint.lastSuccessUpdate = Date.now();
-
-  if (typeof accessPoint.retrieveProps !== 'function') {
-    accessPoint.retrieveProps = retrieveProps.bind(null, accessPoint);
-  }
-  const properties = accessPoint.retrieveProps(host, meta);
-  const changes = accessPoint.setProps?.(properties)?.getChanges?.();
+  const changes = accessPoint.setProps?.({ host, port: Number(meta.port) || accessPoint.port })?.getChanges?.();
   if (changes?.length) {
     clOptions.em?.emit('access-point-updated', { accessPoint, changes });
   } else {
@@ -71,7 +62,7 @@ export async function updateAccessPoint(clOptions: ICLOptions, accessPoint: IAcc
   return 1;
 }
 
-export async function updateAccessPoints(clOptions: ICLOptions) {
+export async function updateAccessPoints(clOptions: ICLOptions): Promise<boolean> {
   const accessPoints = Object.values(<IAccessPoints>clOptions.config.accessPoints).filter((ap: any) => ap?.isAP);
   const result = [];
   for (let i = 0; i < accessPoints.length; i++) {
@@ -85,10 +76,12 @@ export async function updateAccessPoints(clOptions: ICLOptions) {
     clOptions.logger?.debug(`${PREFIX}: updated ${updatedCount} access point(s)`);
     clOptions.em?.emit('access-points-updated');
   }
+  return !!updatedCount;
 }
 
 export const accessPointsUpdater = {
   isStarted: false,
+  isAnyUpdated: false,
   async start(clOptions: ICLOptions, updateInterval: number = 10_000): Promise<number> {
     if (this.isStarted) {
       return 0;
@@ -98,7 +91,10 @@ export const accessPointsUpdater = {
     const doLoop = async () => {
       try {
         cache = {};
-        await updateAccessPoints(clOptions);
+        const isAnyUpdated = await updateAccessPoints(clOptions);
+        if (isAnyUpdated) {
+          this.isAnyUpdated = true;
+        }
       } catch (err) {
         logger?.error(err);
       }
@@ -108,5 +104,13 @@ export const accessPointsUpdater = {
     doLoop().then((r) => r);
     this.isStarted = true;
     return 1;
+  },
+  async waitForAnyUpdated(timeout: number = 10_000): Promise<boolean> {
+    const start = Date.now();
+    while (!this.isAnyUpdated && (Date.now() - start < timeout)) {
+      // eslint-disable-next-line no-await-in-loop
+      await sleep(100);
+    }
+    return this.isAnyUpdated;
   },
 };

@@ -1,6 +1,7 @@
 import { AccessPoints } from '../src';
 import { logger } from './logger';
 import { setProperty } from './test-utils';
+import { IAccessPoint } from '../src/types';
 
 const config = {
   accessPoints: {
@@ -194,6 +195,15 @@ describe('Access Points test', () => {
   test('Update AP with no data specified', () => {
     expect(cfg.accessPoints.setAP('empty', null)).toBe(undefined);
   });
+
+  test('Test waitForHostPortUpdated()', async () => {
+    const ap = cfg.accessPoints.getAP('wso2siAPI') as IAccessPoint;
+    setTimeout(() => {
+      ap.setProps?.({ host: 'new-host' });
+    }, 2000);
+    const isUpdated = await ap.waitForHostPortUpdated?.(10_000);
+    expect(isUpdated).toBe(true);
+  }, 15_000);
 
   test('Update AP with no consulServiceName specified', () => {
     expect(cfg.accessPoints.setAP('noConsulServiceName', { title: 'new title' })).toBe(undefined);

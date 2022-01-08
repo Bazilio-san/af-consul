@@ -155,6 +155,10 @@ export const getPackageJson = (relPathToProjRoot: string = '') => {
   }
 };
 
+export const sleep = async (timeOut: number) => new Promise((resolve) => {
+  setTimeout(resolve, timeOut);
+});
+
 export const isObject = (v: any): boolean => v != null
   && typeof v === 'object'
   && !Array.isArray(v)

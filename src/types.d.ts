@@ -68,8 +68,8 @@ export interface IAccessPoint {
   setProps?: (data: Record<string, any> | null) => IAccessPoint | undefined,
   isAP?: true,
   lastSuccessUpdate?: number,
+  idHostPortUpdated?: boolean,
   getChanges?: () => [string, any, any][] | undefined,
-  retrieveProps?: (host: string, meta: Record<string, any>) => Record<string, any>,
 
   [propName: string]: any
 }
