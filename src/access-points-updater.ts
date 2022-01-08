@@ -19,6 +19,12 @@ const debug = (msg: string) => {
 
 const UPDATE_INTERVAL_IF_SUCCESS_MILLIS = 2 * 60_000;
 
+// A stub in case such a function is not set for the access point in the configuration
+function retrieveProps(accessPoint: IAccessPoint, host: string, meta: any) {
+  const port = Number(meta.port) || accessPoint.port;
+  return { host, port };
+}
+
 let cache = {};
 
 export async function updateAccessPoint(clOptions: ICLOptions, accessPoint: IAccessPoint): Promise<-2 | -1 | 0 | 1> {
@@ -53,7 +59,14 @@ export async function updateAccessPoint(clOptions: ICLOptions, accessPoint: IAcc
     return -1;
   }
   accessPoint.lastSuccessUpdate = Date.now();
-  const changes = accessPoint.setProps?.({ host, port: Number(meta.port) || accessPoint.port })?.getChanges?.();
+
+  // If the retrieveProps function is not set for the access point in the configuration, use the stub
+  if (typeof accessPoint.retrieveProps !== 'function') {
+    accessPoint.retrieveProps = retrieveProps.bind(null, accessPoint);
+  }
+  const properties = accessPoint.retrieveProps(host, meta);
+  const changes = accessPoint.setProps?.(properties)?.getChanges?.();
+
   if (changes?.length) {
     clOptions.em?.emit('access-point-updated', { accessPoint, changes });
   } else {
