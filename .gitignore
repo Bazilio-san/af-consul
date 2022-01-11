@@ -24,8 +24,6 @@ tmp/
 t.*
 local*.*
 *.local.*
-/package-lock.json
-/yarn.lock
 /.env
 **/dist
 /_log/
