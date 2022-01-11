@@ -1,6 +1,6 @@
 {
   "name": "af-consul",
-  "version": "1.0.96",
+  "version": "1.0.97",
   "description": "A highly specialized function library",
   "main": "./dist/cjs/src/index.js",
   "module": "./dist/esm/index.js",
@@ -22,6 +22,7 @@
     "prepack": "npm run clean && npm run build"
   },
   "devDependencies": {
+    "@jest/test-sequencer": "^27.4.6",
     "@types/consul": "^0.40.0",
     "@types/debug": "^4.1.7",
     "@types/jest": "^27.4.0",

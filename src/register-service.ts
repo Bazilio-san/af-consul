@@ -4,6 +4,7 @@ import loggerStub from './logger-stub';
 import { ICLOptions, IConsulAPI, IRegisterConfig, IRegisterCyclic, TRegisterType } from './types';
 import { cyan, green, reset } from './color';
 import { toMills } from './utils';
+import { FORCE_EVERY_REGISTER_ATTEMPT } from './constants';
 
 const prefix = 'CONSUL-REG:';
 const prefixG = `${green}${prefix}${reset}`;
@@ -16,7 +17,7 @@ export const getRegisterCyclic = (
   registerConfig: IRegisterConfig,
 ): IRegisterCyclic => ({
   isStarted: false,
-  skipNextUntil: 0,
+  skipNextRegisterAttemptUntil: 0,
   healthCheckIntervalMillis: 0,
   registerIntervalMillis: 0,
   options: opts,
@@ -40,21 +41,22 @@ export const getRegisterCyclic = (
     const logger = options.logger || loggerStub;
 
     options.em?.on('health-check', () => {
-      this.skipNextUntil = Date.now() + (this.healthCheckIntervalMillis * 1.5);
+      this.skipNextRegisterAttemptUntil = Date.now() + (this.healthCheckIntervalMillis * 1.5);
     });
 
     const doLoop = async () => {
-      if (this.skipNextUntil < Date.now()) {
+      if (FORCE_EVERY_REGISTER_ATTEMPT || this.skipNextRegisterAttemptUntil < Date.now()) {
         try {
           if (this.isStarted) {
             logger.silly(`${prefixG} Service ${cyan}${registerConfig.id}${reset} registration check...`);
           }
-          await consulApi.registerService(registerConfig, { registerType: this.isStarted ? (registerType || 'if-config-differ') : 'force' });
+          registerType = (FORCE_EVERY_REGISTER_ATTEMPT || !this.isStarted) ? 'force' : (registerType || 'if-config-differ');
+          await consulApi.registerService(registerConfig, { registerType });
         } catch (err: Error | any) {
           err.message = `${prefix} ERROR: ${err.message}`;
           logger.error(err);
         }
-        this.skipNextUntil = 0;
+        this.skipNextRegisterAttemptUntil = 0;
       } else {
         logger.silly(`${prefixG}: Skip registration check after health check`);
       }

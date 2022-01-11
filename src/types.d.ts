@@ -135,7 +135,7 @@ export interface IConsulAPI {
 
 export interface IRegisterCyclic {
   isStarted: boolean,
-  skipNextUntil: number,
+  skipNextRegisterAttemptUntil: number,
   healthCheckIntervalMillis: number,
   registerIntervalMillis: number,
   options: ICLOptions,
