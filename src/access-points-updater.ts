@@ -10,7 +10,7 @@ import { sleep } from './utils';
 const PREFIX = 'AP-UPDATER';
 
 const DEBUG = (String(process.env.DEBUG || '')).trim();
-const dbg = { on: /\bAP-UPDATER/i.test(DEBUG) };
+const dbg = { on: /\bAP-UPDATER\*?/i.test(DEBUG) || DEBUG === '*' };
 const debug = (msg: string) => {
   if (dbg.on) {
     console.log(`${magenta}${PREFIX}${reset}: ${msg}`);
