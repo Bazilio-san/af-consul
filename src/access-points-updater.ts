@@ -6,10 +6,10 @@ import loggerStub from './logger-stub';
 import { getConsulApiCached } from '../src';
 import { IAccessPoint, IAccessPoints, ICLOptions, IConsulAPI } from './types';
 import { sleep } from './utils';
+import { DEBUG } from './constants';
 
 const PREFIX = 'AP-UPDATER';
 
-const DEBUG = (String(process.env.DEBUG || '')).trim();
 const dbg = { on: /\bAP-UPDATER\*?/i.test(DEBUG) || DEBUG === '*' };
 const debug = (msg: string) => {
   if (dbg.on) {

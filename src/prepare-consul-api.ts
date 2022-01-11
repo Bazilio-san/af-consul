@@ -25,15 +25,13 @@ import {
 } from './types';
 import loggerStub from './logger-stub';
 import { getFQDNCached } from './fqdn';
-import { MAX_API_CACHED, PREFIX } from './constants';
+import { DEBUG, CONSUL_DEBUG_ON, MAX_API_CACHED, PREFIX } from './constants';
 import { minimizeCache, parseBoolean, serviceConfigDiff } from './utils';
 import { getConfigHash } from './hash';
 
 const mutex = new Mutex();
 
-const DEBUG = (String(process.env.DEBUG || '')).trim();
-const isDebugOn = /\baf-consul:?\*?/i.test(DEBUG) || DEBUG === '*';
-const dbg = { on: isDebugOn, curl: isDebugOn && /\baf-consul:curl:?\*?/i.test(DEBUG) };
+const dbg = { on: CONSUL_DEBUG_ON, curl: /\baf-consul:curl:?\*?/i.test(DEBUG) };
 const debug = (msg: string) => {
   if (dbg.on) {
     console.log(`${magenta}${PREFIX}${reset}: ${msg}`);
