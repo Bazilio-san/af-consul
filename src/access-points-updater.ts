@@ -17,7 +17,7 @@ const debug = (msg: string) => {
   }
 };
 
-const UPDATE_INTERVAL_IF_CONSUL_REGISTER_SUCCESS_MILLIS = process.env.UPDATE_INTERVAL_IF_CONSUL_REGISTER_SUCCESS_MILLIS || (2 * 60_000);
+const UPDATE_INTERVAL_IF_CONSUL_REGISTER_SUCCESS_MILLIS = Number(process.env.UPDATE_INTERVAL_IF_CONSUL_REGISTER_SUCCESS_MILLIS) || (2 * 60_000);
 
 // A stub in case such a function is not set for the access point in the configuration
 function retrieveProps(accessPoint: IAccessPoint, host: string, meta: any) {

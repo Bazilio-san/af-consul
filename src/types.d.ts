@@ -70,6 +70,7 @@ export interface IAccessPoint {
   lastSuccessUpdate?: number,
   idHostPortUpdated?: boolean,
   getChanges?: () => [string, any, any][] | undefined,
+  updateIntervalIfSuccessMillis?: number,
 
   [propName: string]: any
 }
