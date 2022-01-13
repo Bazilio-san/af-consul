@@ -95,11 +95,11 @@ export async function updateAccessPoints(clOptions: ICLOptions): Promise<boolean
 export const accessPointsUpdater = {
   isStarted: false,
   isAnyUpdated: false,
+  _timerId: setTimeout(() => null, 0),
   async start(clOptions: ICLOptions, updateInterval: number = 10_000): Promise<number> {
     if (this.isStarted) {
       return 0;
     }
-    let timerId: any;
     const logger = clOptions.logger || loggerStub;
     const doLoop = async () => {
       try {
@@ -111,8 +111,8 @@ export const accessPointsUpdater = {
       } catch (err) {
         logger?.error(err);
       }
-      clearTimeout(timerId);
-      timerId = setTimeout(doLoop, updateInterval);
+      clearTimeout(this._timerId);
+      this._timerId = setTimeout(doLoop, updateInterval);
     };
     doLoop().then((r) => r);
     this.isStarted = true;
@@ -125,5 +125,8 @@ export const accessPointsUpdater = {
       await sleep(100);
     }
     return this.isAnyUpdated;
+  },
+  stop() {
+    clearTimeout(this._timerId);
   },
 };
