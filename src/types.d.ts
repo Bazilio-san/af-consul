@@ -140,6 +140,7 @@ export interface IRegisterCyclic {
   registerIntervalMillis: number,
   options: ICLOptions,
   _timerId: NodeJS.Timeout,
+  _logger: ILogger,
 
   start: (opt?: ICLOptions, registerInterval?: number, registerType?: TRegisterType) => Promise<-1 | 0 | 1>
   stop: () => void

@@ -96,11 +96,12 @@ export const accessPointsUpdater = {
   isStarted: false,
   isAnyUpdated: false,
   _timerId: setTimeout(() => null, 0),
+  _logger: loggerStub,
   async start(clOptions: ICLOptions, updateInterval: number = 10_000): Promise<number> {
     if (this.isStarted) {
       return 0;
     }
-    const logger = clOptions.logger || loggerStub;
+    this._logger = clOptions.logger || loggerStub;
     const doLoop = async () => {
       try {
         cache = {};
@@ -109,13 +110,14 @@ export const accessPointsUpdater = {
           this.isAnyUpdated = true;
         }
       } catch (err) {
-        logger?.error(err);
+        this._logger?.error(err);
       }
       clearTimeout(this._timerId);
       this._timerId = setTimeout(doLoop, updateInterval);
     };
     doLoop().then((r) => r);
     this.isStarted = true;
+    this._logger.info('Access point updater started');
     return 1;
   },
   async waitForAnyUpdated(timeout: number = 10_000): Promise<boolean> {
@@ -129,5 +131,6 @@ export const accessPointsUpdater = {
   stop() {
     clearTimeout(this._timerId);
     this.isStarted = false;
+    this._logger.info('Access point updater stopped');
   },
 };
