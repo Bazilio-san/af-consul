@@ -96,27 +96,26 @@ export const accessPointsUpdater = {
   isStarted: false,
   isAnyUpdated: false,
   _timerId: setTimeout(() => null, 0),
-  async start(clOptions: ICLOptions, updateInterval: number = 10_000): Promise<number> {
-    if (this.isStarted) {
-      return 0;
-    }
-    const logger = clOptions.logger || loggerStub;
-    const doLoop = async () => {
-      try {
-        cache = {};
-        const isAnyUpdated = await updateAccessPoints(clOptions);
-        if (isAnyUpdated) {
-          this.isAnyUpdated = true;
+  async start(clOptions: ICLOptions, updateInterval: number = 10_000): Promise<Function> {
+    if (!this.isStarted) {
+      const logger = clOptions.logger || loggerStub;
+      const doLoop = async () => {
+        try {
+          cache = {};
+          const isAnyUpdated = await updateAccessPoints(clOptions);
+          if (isAnyUpdated) {
+            this.isAnyUpdated = true;
+          }
+        } catch (err) {
+          logger?.error(err);
         }
-      } catch (err) {
-        logger?.error(err);
-      }
-      clearTimeout(this._timerId);
-      this._timerId = setTimeout(doLoop, updateInterval);
-    };
-    doLoop().then((r) => r);
-    this.isStarted = true;
-    return 1;
+        clearTimeout(this._timerId);
+        this._timerId = setTimeout(doLoop, updateInterval);
+      };
+      doLoop().then((r) => r);
+      this.isStarted = true;
+    }
+    return this.stop.bind(this);
   },
   async waitForAnyUpdated(timeout: number = 10_000): Promise<boolean> {
     const start = Date.now();
@@ -128,5 +127,6 @@ export const accessPointsUpdater = {
   },
   stop() {
     clearTimeout(this._timerId);
+    this.isStarted = false;
   },
 };
