@@ -59,7 +59,7 @@ export const getRegisterCyclic = (
         }
         this.skipNextRegisterAttemptUntil = 0;
       } else {
-        this._logger.silly(`${prefixG}: Skip registration check after health check`);
+        this._logger.silly(`${prefixG} Skip registration check after health check`);
       }
       clearTimeout(this._timerId);
       this._timerId = setTimeout(doLoop, this.registerIntervalMillis);

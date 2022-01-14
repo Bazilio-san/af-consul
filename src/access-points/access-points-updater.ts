@@ -85,8 +85,8 @@ export async function updateAccessPoints(clOptions: ICLOptions): Promise<boolean
     result.push(res);
   }
   const updatedCount = result.filter((v) => v > 0);
-  if (updatedCount) {
-    clOptions.logger?.debug(`${PREFIX}: updated ${updatedCount} access point(s)`);
+  if (updatedCount.length) {
+    clOptions.logger?.silly(`${PREFIX}: updated ${updatedCount.length} access point(s)`);
     clOptions.em?.emit('access-points-updated');
   }
   return !!updatedCount;
