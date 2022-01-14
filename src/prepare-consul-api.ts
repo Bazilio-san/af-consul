@@ -25,7 +25,7 @@ import {
 } from './types';
 import loggerStub from './lib/logger-stub';
 import { getFQDNCached } from './lib/fqdn';
-import { DEBUG, CONSUL_DEBUG_ON, MAX_API_CACHED, PREFIX } from './constants';
+import { CONSUL_DEBUG_ON, DEBUG, MAX_API_CACHED, PREFIX } from './constants';
 import { minimizeCache, parseBoolean, serviceConfigDiff } from './lib/utils';
 import { getConfigHash } from './lib/hash';
 
@@ -236,31 +236,40 @@ export const prepareConsulAPI = async (clOptions: ICLOptions): Promise<IConsulAP
     },
 
     async registerService(registerConfig: IRegisterConfig, registerOptions: IRegisterOptions): Promise<TRegisterResult> {
-      const { registerType, noAlreadyRegisteredMessage } = registerOptions;
       const serviceId = registerConfig.id || registerConfig.name;
       const srv = `Service '${cyan}${serviceId}${reset}'`;
-      let isAlreadyRegistered = false;
-      if (registerType !== 'force') {
-        if (!registerType || registerType === 'if-not-registered') {
-          isAlreadyRegistered = await this.checkIfServiceRegistered(serviceId);
-        } else { // registerType === 'if-config-differ'
-          const serviceInfo = await this.getServiceInfo(serviceId);
-          const diff = serviceConfigDiff(registerConfig, serviceInfo);
-          isAlreadyRegistered = diff.length === 0;
-          if (diff.length) {
-            logger.info(`${srv}. Configuration difference detected. New: config.${diff[0]}=${diff[1]} / Current: config.${diff[2]}=${diff[3]}`);
-          }
+
+      const serviceInfo = await this.getServiceInfo(serviceId);
+      const diff = serviceConfigDiff(registerConfig, serviceInfo);
+      const isAlreadyRegistered = !!serviceInfo;
+
+      const already = async (): Promise<TRegisterResult> => {
+        if (!registerOptions.noAlreadyRegisteredMessage) {
+          logger.info(`${srv} already registered in Consul`);
         }
-        if (isAlreadyRegistered) {
-          if (!noAlreadyRegisteredMessage) {
-            logger.info(`${srv} already registered in Consul`);
+        return 'already';
+      };
+
+      switch (registerOptions.registerType) {
+        case 'if-config-differ': {
+          if (!diff.length) {
+            return already();
           }
-          return 'already';
+          logger.info(`${srv}. Configuration difference detected. New: config.${diff[0]}=${diff[1]} / Current: config.${diff[2]}=${diff[3]}`);
+          break;
+        }
+        case 'if-not-registered': {
+          if (isAlreadyRegistered) {
+            return already();
+          }
+          break;
         }
       }
 
-      if (isAlreadyRegistered && (await this.agentServiceDeregister(serviceId))) {
-        logger.info(`Previous registration of ${srv} removed from Consul`);
+      if (isAlreadyRegistered && registerOptions.deleteOtherInstance) {
+        if (await this.agentServiceDeregister(serviceId)) {
+          logger.info(`Previous registration of ${srv} removed from Consul`);
+        }
       }
       const isJustRegistered = await this.agentServiceRegister(registerConfig);
       if (isJustRegistered) {

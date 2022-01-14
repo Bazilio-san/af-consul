@@ -1,7 +1,7 @@
 // noinspection JSUnusedGlobalSymbols
 
 import loggerStub from './lib/logger-stub';
-import { ICLOptions, IConsulAPI, IRegisterConfig, IRegisterCyclic, TRegisterType } from './types';
+import { ICLOptions, IConsulAPI, ICyclicStartArgs, IRegisterConfig, IRegisterCyclic } from './types';
 import { cyan, green, reset } from './lib/color';
 import { toMills } from './lib/utils';
 import { FORCE_EVERY_REGISTER_ATTEMPT } from './constants';
@@ -25,17 +25,21 @@ export const getRegisterCyclic = (
   _logger: loggerStub,
 
   async start(
-    opt?: ICLOptions,
-    registerInterval: number = 0,
-    registerType: TRegisterType = 'if-not-registered',
+    {
+      cLOptions,
+      registerInterval = 0,
+      registerType = 'if-not-registered',
+      deleteOtherInstance = false,
+      noAlreadyRegisteredMessage = false,
+    }: ICyclicStartArgs,
   ): Promise<-1 | 0 | 1> {
-    if (!opt && !this.options) {
+    if (!cLOptions && !this.options) {
       return -1;
     }
     if (this.isStarted) {
       return 0;
     }
-    const options = (opt || this.options) as ICLOptions;
+    const options = (cLOptions || this.options) as ICLOptions;
     this.healthCheckIntervalMillis = toMills(options.config.consul.check?.interval);
     this.registerIntervalMillis = registerInterval || (this.healthCheckIntervalMillis * 1.5) || DEFAULT_INTERVAL;
 
@@ -55,7 +59,11 @@ export const getRegisterCyclic = (
           if (this.isStarted) {
             this._logger.silly(`${prefixG} Service ${cyan}${registerConfig.id}${reset} registration check...`);
           }
-          await consulApi.registerService(registerConfig, { registerType: (FORCE_EVERY_REGISTER_ATTEMPT || !this.isStarted) ? 'force' : registerType });
+          await consulApi.registerService(registerConfig, {
+            registerType: (FORCE_EVERY_REGISTER_ATTEMPT || !this.isStarted) ? 'force' : registerType,
+            deleteOtherInstance,
+            noAlreadyRegisteredMessage,
+          });
         } catch (err: Error | any) {
           err.message = `${prefix} ERROR: ${err.message}`;
           this._logger.error(err);

@@ -31,6 +31,7 @@ export type TRegisterType = 'if-not-registered' | 'if-config-differ' | 'force';
 
 export interface IRegisterOptions {
   registerType?: TRegisterType,
+  deleteOtherInstance?: boolean,
   noAlreadyRegisteredMessage?: boolean,
 }
 
@@ -133,6 +134,14 @@ export interface IConsulAPI {
   getConsulAgentOptions: (config: IConfig) => Promise<IConsulAgentOptions>,
 }
 
+export interface ICyclicStartArgs {
+  cLOptions: ICLOptions,
+  registerInterval: number,
+  registerType: TRegisterType,
+  deleteOtherInstance: boolean,
+  noAlreadyRegisteredMessage: boolean,
+}
+
 export interface IRegisterCyclic {
   isStarted: boolean,
   skipNextRegisterAttemptUntil: number,
@@ -142,7 +151,7 @@ export interface IRegisterCyclic {
   _timerId: NodeJS.Timeout,
   _logger: ILogger,
 
-  start: (opt?: ICLOptions, registerInterval?: number, registerType?: TRegisterType) => Promise<-1 | 0 | 1>
+  start: (cyclicStartArgs: ICyclicStartArgs) => Promise<-1 | 0 | 1>
   stop: () => void
 }
 
