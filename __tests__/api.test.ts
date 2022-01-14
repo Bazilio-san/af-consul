@@ -4,7 +4,7 @@ import { logger } from './logger';
 import { IApi, IConsulServiceInfo, Maybe } from '../src/types';
 import { ILoggerMocked, mockLogger } from './test-utils';
 import { getFQDNCached } from '../src';
-import { serviceConfigDiff } from '../src/utils';
+import { serviceConfigDiff } from '../src/lib/utils';
 import { apiCache } from '../src/get-api';
 import { MAX_API_CACHED } from '../src/constants';
 

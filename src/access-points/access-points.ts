@@ -1,8 +1,8 @@
 /* eslint-disable no-await-in-loop */
-import loggerStub from './logger-stub';
-import { blue, cyan, green, magenta, reset } from './color';
-import { IAccessPoint, IAccessPoints, ILogger, Maybe } from './types';
-import { isObject, sleep } from './utils';
+import loggerStub from '../lib/logger-stub';
+import { blue, cyan, green, magenta, reset } from '../lib/color';
+import { IAccessPoint, IAccessPoints, ILogger, Maybe } from '../types';
+import { isObject, sleep } from '../lib/utils';
 
 const PREFIX = 'ACCESS-POINT';
 

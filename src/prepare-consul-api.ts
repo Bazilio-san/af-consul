@@ -5,9 +5,9 @@ import * as Consul from 'consul';
 import { Mutex } from 'async-mutex';
 // @ts-ignore
 import * as consulUtils from 'consul/lib/utils.js';
-import { cyan, magenta, reset, yellow } from './color';
-import getCurl from './curl-text';
-import getHttpRequestText from './http-request-text';
+import { cyan, magenta, reset, yellow } from './lib/color';
+import getCurl from './lib/curl-text';
+import getHttpRequestText from './lib/http-request-text';
 import {
   ICache,
   ICLOptions,
@@ -23,11 +23,11 @@ import {
   Maybe,
   TRegisterResult,
 } from './types';
-import loggerStub from './logger-stub';
-import { getFQDNCached } from './fqdn';
+import loggerStub from './lib/logger-stub';
+import { getFQDNCached } from './lib/fqdn';
 import { DEBUG, CONSUL_DEBUG_ON, MAX_API_CACHED, PREFIX } from './constants';
-import { minimizeCache, parseBoolean, serviceConfigDiff } from './utils';
-import { getConfigHash } from './hash';
+import { minimizeCache, parseBoolean, serviceConfigDiff } from './lib/utils';
+import { getConfigHash } from './lib/hash';
 
 const mutex = new Mutex();
 
