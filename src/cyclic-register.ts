@@ -26,8 +26,8 @@ export const getRegisterCyclic = (
 
   async start(
     opt?: ICLOptions,
-    registerInterval?: number,
-    registerType?: TRegisterType,
+    registerInterval: number = 0,
+    registerType: TRegisterType = 'if-not-registered',
   ): Promise<-1 | 0 | 1> {
     if (!opt && !this.options) {
       return -1;
@@ -41,6 +41,10 @@ export const getRegisterCyclic = (
 
     this._logger = options.logger || loggerStub;
 
+    if (!registerType) {
+      registerType = 'if-not-registered';
+    }
+
     options.em?.on('health-check', () => {
       this.skipNextRegisterAttemptUntil = Date.now() + (this.healthCheckIntervalMillis * 1.5);
     });
@@ -51,8 +55,7 @@ export const getRegisterCyclic = (
           if (this.isStarted) {
             this._logger.silly(`${prefixG} Service ${cyan}${registerConfig.id}${reset} registration check...`);
           }
-          registerType = (FORCE_EVERY_REGISTER_ATTEMPT || !this.isStarted) ? 'force' : (registerType || 'if-config-differ');
-          await consulApi.registerService(registerConfig, { registerType });
+          await consulApi.registerService(registerConfig, { registerType: (FORCE_EVERY_REGISTER_ATTEMPT || !this.isStarted) ? 'force' : registerType });
         } catch (err: Error | any) {
           err.message = `${prefix} ERROR: ${err.message}`;
           this._logger.error(err);
