@@ -21,6 +21,7 @@ export const getRegisterCyclic = (
   healthCheckIntervalMillis: 0,
   registerIntervalMillis: 0,
   options: opts,
+  _timerId: setTimeout(() => null, 0),
 
   async start(
     opt?: ICLOptions,
@@ -30,41 +31,44 @@ export const getRegisterCyclic = (
     if (!opt && !this.options) {
       return -1;
     }
-    if (this.isStarted) {
+    if (!this.isStarted) {
+      const options = (opt || this.options) as ICLOptions;
+      this.healthCheckIntervalMillis = toMills(options.config.consul.check?.interval);
+      this.registerIntervalMillis = registerInterval || (this.healthCheckIntervalMillis * 1.5) || DEFAULT_INTERVAL;
+
+      const logger = options.logger || loggerStub;
+
+      options.em?.on('health-check', () => {
+        this.skipNextRegisterAttemptUntil = Date.now() + (this.healthCheckIntervalMillis * 1.5);
+      });
+
+      const doLoop = async () => {
+        if (FORCE_EVERY_REGISTER_ATTEMPT || this.skipNextRegisterAttemptUntil < Date.now()) {
+          try {
+            if (this.isStarted) {
+              logger.silly(`${prefixG} Service ${cyan}${registerConfig.id}${reset} registration check...`);
+            }
+            registerType = (FORCE_EVERY_REGISTER_ATTEMPT || !this.isStarted) ? 'force' : (registerType || 'if-config-differ');
+            await consulApi.registerService(registerConfig, { registerType });
+          } catch (err: Error | any) {
+            err.message = `${prefix} ERROR: ${err.message}`;
+            logger.error(err);
+          }
+          this.skipNextRegisterAttemptUntil = 0;
+        } else {
+          logger.silly(`${prefixG}: Skip registration check after health check`);
+        }
+        clearTimeout(this._timerId);
+        this._timerId = setTimeout(doLoop, this.registerIntervalMillis);
+      };
+      doLoop().then((r) => r);
+      this.isStarted = true;
       return 0;
     }
-    let timerId: any;
-    const options = (opt || this.options) as ICLOptions;
-    this.healthCheckIntervalMillis = toMills(options.config.consul.check?.interval);
-    this.registerIntervalMillis = registerInterval || (this.healthCheckIntervalMillis * 1.5) || DEFAULT_INTERVAL;
-
-    const logger = options.logger || loggerStub;
-
-    options.em?.on('health-check', () => {
-      this.skipNextRegisterAttemptUntil = Date.now() + (this.healthCheckIntervalMillis * 1.5);
-    });
-
-    const doLoop = async () => {
-      if (FORCE_EVERY_REGISTER_ATTEMPT || this.skipNextRegisterAttemptUntil < Date.now()) {
-        try {
-          if (this.isStarted) {
-            logger.silly(`${prefixG} Service ${cyan}${registerConfig.id}${reset} registration check...`);
-          }
-          registerType = (FORCE_EVERY_REGISTER_ATTEMPT || !this.isStarted) ? 'force' : (registerType || 'if-config-differ');
-          await consulApi.registerService(registerConfig, { registerType });
-        } catch (err: Error | any) {
-          err.message = `${prefix} ERROR: ${err.message}`;
-          logger.error(err);
-        }
-        this.skipNextRegisterAttemptUntil = 0;
-      } else {
-        logger.silly(`${prefixG}: Skip registration check after health check`);
-      }
-      clearTimeout(timerId);
-      timerId = setTimeout(doLoop, this.registerIntervalMillis);
-    };
-    doLoop().then((r) => r);
-    this.isStarted = true;
     return 1;
+  },
+  stop() {
+    clearTimeout(this._timerId);
+    this.isStarted = false;
   },
 });

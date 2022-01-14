@@ -139,7 +139,10 @@ export interface IRegisterCyclic {
   healthCheckIntervalMillis: number,
   registerIntervalMillis: number,
   options: ICLOptions,
+  _timerId: NodeJS.Timeout,
+
   start: (opt?: ICLOptions, registerInterval?: number, registerType?: TRegisterType) => Promise<-1 | 0 | 1>
+  stop: () => void
 }
 
 export interface IApi extends IConsulAPI {
