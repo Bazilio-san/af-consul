@@ -31,7 +31,7 @@ import { getConfigHash } from './lib/hash';
 
 const mutex = new Mutex();
 
-const dbg = { on: CONSUL_DEBUG_ON, curl: /\baf-consul:curl:?\*?/i.test(DEBUG) };
+const dbg = { on: CONSUL_DEBUG_ON, curl: /af-consul:curl/i.test(DEBUG) };
 const debug = (msg: string) => {
   if (dbg.on) {
     console.log(`${magenta}${PREFIX}${reset}: ${msg}`);
