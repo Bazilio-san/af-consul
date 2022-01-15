@@ -99,10 +99,11 @@ export const prepareConsulAPI = async (clOptions: ICLOptions): Promise<IConsulAP
   // @ts-ignore request.res.body request.res.statusCode
 
   function common(fnName: string, {
+    agentOptions,
     options,
     withError,
     result,
-  }: { options?: any; withError?: boolean; result?: any }): any {
+  }: { agentOptions?: IConsulAgentOptions, options?: any; withError?: boolean; result?: any }): any {
     return new Promise((resolve, reject) => {
       const callback = (err: Error | any, res: any) => {
         if (err) {
@@ -111,7 +112,7 @@ export const prepareConsulAPI = async (clOptions: ICLOptions): Promise<IConsulAP
         }
         resolve(result || res);
       };
-      let fn = consulInstance;
+      let fn = agentOptions ? Consul(agentOptions) : consulInstance;
       const namesArr = fnName.split('.');
       const method: string = namesArr.pop() as string;
       namesArr.forEach((v) => {
@@ -129,8 +130,8 @@ export const prepareConsulAPI = async (clOptions: ICLOptions): Promise<IConsulAP
 
   const api = {
     // Returns the services the agent is managing.  - список сервисов на этом агенте
-    async agentServiceList(withError: boolean = false) {
-      return common('agent.service.list', { withError });
+    async agentServiceList(agentOptions?: IConsulAgentOptions, withError: boolean = false) {
+      return common('agent.service.list', { agentOptions, withError });
     },
 
     // Returns the nodes and health info of a service
@@ -201,18 +202,29 @@ export const prepareConsulAPI = async (clOptions: ICLOptions): Promise<IConsulAP
     },
 
     // Deregister a service.
-    async agentServiceDeregister(serviceId: string, withError: boolean = false): Promise<boolean> {
+    async agentServiceDeregister(serviceId: string, agentOptions?: IConsulAgentOptions, withError: boolean = false): Promise<boolean> {
       return common('agent.service.deregister', {
+        agentOptions,
         options: serviceId,
         withError,
         result: true,
       });
     },
 
-    async deregisterIfNeed(serviceId: string): Promise<boolean> {
-      const isAlreadyRegistered = await this.checkIfServiceRegistered(serviceId);
+    async deregisterIfNeed(serviceId: string, agentHost?: string, agentPort?: string): Promise<boolean> {
+      agentHost = agentHost || consulAgentOptions.host;
+      agentPort = agentPort || consulAgentOptions.port;
+      let agentOptions: Maybe<IConsulAgentOptions>;
+      if (agentHost !== consulAgentOptions.host || agentPort !== consulAgentOptions.port) {
+        const secure = String(agentPort) !== '8500';
+        agentOptions = {
+          ...consulAgentOptions, host: agentHost, port: agentPort, secure,
+        };
+      }
+
+      const isAlreadyRegistered = await this.checkIfServiceRegistered(serviceId, agentOptions);
       if (isAlreadyRegistered) {
-        const isDeregister = await this.agentServiceDeregister(serviceId);
+        const isDeregister = await this.agentServiceDeregister(serviceId, agentOptions);
         if (isDeregister) {
           logger.info(`Previous registration of service '${cyan}${serviceId}${reset}' removed from Consul`);
         } else {
@@ -228,8 +240,8 @@ export const prepareConsulAPI = async (clOptions: ICLOptions): Promise<IConsulAP
     // Returns the members as seen by the consul agent. - список агентов (нод)
     agentMembers: async (withError: boolean = false) => common('agent.members', { withError }),
 
-    async checkIfServiceRegistered(serviceIdOrName: string): Promise<boolean> {
-      const agentServiceListR = await this.agentServiceList();
+    async checkIfServiceRegistered(serviceIdOrName: string, agentOptions?: IConsulAgentOptions): Promise<boolean> {
+      const agentServiceListR = await this.agentServiceList(agentOptions);
       return agentServiceListR
         && Object.values(agentServiceListR)
           .some(({ ID: i, Service: s }: any) => i === serviceIdOrName || s === serviceIdOrName);

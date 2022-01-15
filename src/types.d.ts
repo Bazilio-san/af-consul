@@ -119,15 +119,15 @@ export type TCommonFnResult = any;
 type TMethod<T> = (...args: any[]) => T;
 
 export interface IConsulAPI {
-  agentServiceList: (withError?: boolean) => Promise<{ [serviceName: string]: IConsulServiceInfo }>,
+  agentServiceList: (agentOptions?: IConsulAgentOptions, withError?: boolean) => Promise<{ [serviceName: string]: IConsulServiceInfo }>,
   consulHealthService: (options: Consul.Health.ServiceOptions, withError?: boolean) => Promise<TCommonFnResult>,
   getServiceInfo: (serviceName: string, withError?: boolean) => Promise<Maybe<IConsulServiceInfo>>,
   getServiceSocket: (serviceName: string, defaults: ISocketInfo) => Promise<ISocketInfo>,
   agentServiceRegister: (options: IRegisterConfig, withError?: boolean) => Promise<boolean>,
-  agentServiceDeregister: (serviceId: string, withError?: boolean) => Promise<TCommonFnResult>,
-  deregisterIfNeed: (serviceId: string) => Promise<boolean>,
+  agentServiceDeregister: (serviceId: string, agentOptions?: IConsulAgentOptions, withError?: boolean) => Promise<TCommonFnResult>,
+  deregisterIfNeed: (serviceId: string, agentHost?: string, agentPort?: string) => Promise<boolean>,
   agentMembers: (withError?: boolean) => Promise<TCommonFnResult>,
-  checkIfServiceRegistered: (serviceIdOrName: string) => Promise<boolean>,
+  checkIfServiceRegistered: (serviceIdOrName: string, agentOptions?: IConsulAgentOptions) => Promise<boolean>,
   registerService: (registerConfig: IRegisterConfig, registerOptions: IRegisterOptions) => Promise<TRegisterResult>,
 
   agentOptions: IConsulAgentOptions,
@@ -163,7 +163,7 @@ export interface IApi extends IConsulAPI {
     once: (registerType?: TRegisterType) => Promise<TRegisterResult>,
     cyclic: IRegisterCyclic,
   }
-  deregister: (svcId?: string) => Promise<boolean>
+  deregister: (svcId?: string, agentHost?: string, agentPort?: string) => Promise<boolean>
 }
 
 
