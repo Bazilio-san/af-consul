@@ -24,15 +24,15 @@ export const getRegisterCyclic = (
   _timerId: setTimeout(() => null, 0),
   _logger: loggerStub,
 
-  async start(
-    {
+  async start(cyclicStartArgs: ICyclicStartArgs): Promise<-1 | 0 | 1> {
+    const {
       cLOptions,
-      registerInterval = 0,
+      registerInterval,
       registerType = 'if-not-registered',
       deleteOtherInstance = false,
       noAlreadyRegisteredMessage = false,
-    }: ICyclicStartArgs,
-  ): Promise<-1 | 0 | 1> {
+    } = cyclicStartArgs;
+
     if (!cLOptions && !this.options) {
       return -1;
     }
@@ -45,10 +45,6 @@ export const getRegisterCyclic = (
 
     this._logger = options.logger || loggerStub;
 
-    if (!registerType) {
-      registerType = 'if-not-registered';
-    }
-
     options.em?.on('health-check', () => {
       this.skipNextRegisterAttemptUntil = Date.now() + (this.healthCheckIntervalMillis * 1.5);
     });
@@ -60,7 +56,7 @@ export const getRegisterCyclic = (
             this._logger.silly(`${prefixG} Service ${cyan}${registerConfig.id}${reset} registration check...`);
           }
           await consulApi.registerService(registerConfig, {
-            registerType: (FORCE_EVERY_REGISTER_ATTEMPT || !this.isStarted) ? 'force' : registerType,
+            registerType: (FORCE_EVERY_REGISTER_ATTEMPT || !this.isStarted) ? 'force' : (registerType || 'if-not-registered'),
             deleteOtherInstance,
             noAlreadyRegisteredMessage,
           });

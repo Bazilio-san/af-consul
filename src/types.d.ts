@@ -135,11 +135,11 @@ export interface IConsulAPI {
 }
 
 export interface ICyclicStartArgs {
-  cLOptions: ICLOptions,
-  registerInterval: number,
-  registerType: TRegisterType,
-  deleteOtherInstance: boolean,
-  noAlreadyRegisteredMessage: boolean,
+  cLOptions?: ICLOptions,
+  registerInterval?: number,
+  registerType?: TRegisterType,
+  deleteOtherInstance?: boolean,
+  noAlreadyRegisteredMessage?: boolean,
 }
 
 export interface IRegisterCyclic {
