@@ -24,14 +24,14 @@ export const getRegisterCyclic = (
   _timerId: setTimeout(() => null, 0),
   _logger: loggerStub,
 
-  async start(cyclicStartArgs: ICyclicStartArgs): Promise<-1 | 0 | 1> {
+  async start(cyclicStartArgs?: ICyclicStartArgs): Promise<-1 | 0 | 1> {
     const {
       cLOptions,
       registerInterval,
       registerType = 'if-not-registered',
       deleteOtherInstance = false,
       noAlreadyRegisteredMessage = false,
-    } = cyclicStartArgs;
+    } = cyclicStartArgs || {};
 
     if (!cLOptions && !this.options) {
       return -1;

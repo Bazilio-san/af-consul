@@ -151,7 +151,7 @@ export interface IRegisterCyclic {
   _timerId: NodeJS.Timeout,
   _logger: ILogger,
 
-  start: (cyclicStartArgs: ICyclicStartArgs) => Promise<-1 | 0 | 1>
+  start: (cyclicStartArgs?: ICyclicStartArgs) => Promise<-1 | 0 | 1>
   stop: () => void
 }
 
