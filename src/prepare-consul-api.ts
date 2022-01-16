@@ -158,7 +158,7 @@ export const prepareConsulAPI = async (clOptions: ICLOptions): Promise<IConsulAP
         consulInstance._get(req, consulUtils.body, (err: Error | any, res: any) => {
           if (err) {
             if (err.statusCode === 404 && err.message.startsWith('unknown service ID')) {
-              logger.warn(`[consul.${fnName}] ${err.message}`);
+              logger.debug(`[consul.${fnName}] ${err.message}`);
             } else {
               logger.error(`[consul.${fnName}] ERROR:\n  err.message: ${err.message}\n  err.stack:\n${err.stack}\n`);
             }

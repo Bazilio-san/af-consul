@@ -85,11 +85,11 @@ describe('Test API', () => {
 
   test('getServiceInfo (unknown service ID)', async () => {
     log.error.mockClear();
-    log.warn.mockClear();
+    log.debug.mockClear();
     serviceInfo = await api.getServiceInfo('dev-cepe01-foo-bar');
     expect(serviceInfo).toBe(undefined);
     expect(log.error.mock.calls.length).toBe(0); // skipCodes = [404]
-    expect(log.warn.mock.calls[0][0]).toMatch(/unknown service ID/);
+    expect(log.debug.mock.calls[0][0]).toMatch(/unknown service ID/);
   }, TIMEOUT_MILLIS);
 
   test('deregister', async () => {
