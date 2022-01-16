@@ -131,7 +131,7 @@ export class AccessPoints {
       accessPoint[propName] = newV;
     });
     if (was.length) {
-      this[_logger_].info(`${PREFIX}: Change AP for ${cyan}${accessPoint.consulServiceName}${reset} to ${became.join('; ')}  from  ${was.join('; ')}`);
+      this[_logger_].info(`${PREFIX}: Change AP ${green}${accessPoint.id}${reset}/${cyan}${accessPoint.consulServiceName}${reset} from ${was.join('; ')}  to  ${became.join('; ')}`);
     }
 
     accessPoint.idHostPortUpdated = accessPoint.idHostPortUpdated
