@@ -82,7 +82,7 @@ export const prepareConsulAPI = async (clOptions: ICLOptions): Promise<IConsulAP
       const { res } = request || {};
       const { statusCode = 0, body = null } = res || {};
       debug(`${rqId}HTTP Status: ${statusCode}`);
-      if (statusCode > 299 && !request.skipCodes?.includes?.(statusCode)) {
+      if (statusCode > 299 && !request.opts?.skipCodes?.includes?.(statusCode)) {
         const serviceName = request._args?.[0]?.name ?? '';
         if (body) {
           logger.error(`${rqId}[${serviceName ? `consul.${serviceName}` : 'CONSUL'}] ERROR: ${JSON.stringify(body)}`);
@@ -152,6 +152,7 @@ export const prepareConsulAPI = async (clOptions: ICLOptions): Promise<IConsulAP
           name: 'agent.service.info',
           path: '/agent/service/{id}',
           params: { id: serviceName },
+          skipCodes: [404],
         };
         consulUtils.options(req, opts);
         consulInstance._get(req, consulUtils.body, (err: Error | any, res: any) => {
