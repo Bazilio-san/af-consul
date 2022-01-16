@@ -39,12 +39,17 @@ const cfg = {
   },
 };
 
-export default async (instanceSuffix: string = ''): Promise<IApi> => {
+export default async ({ instanceSuffix, agentHost }: {
+  instanceSuffix?: string, agentHost?: string
+} = {}): Promise<IApi> => {
   const config = _.cloneDeep(cfg);
   if (instanceSuffix) {
     config.consul.service.instance += instanceSuffix;
   } else {
     config.consul.service.instance = cfg.consul.service.instance;
+  }
+  if (agentHost) {
+    config.consul.agent.host = agentHost;
   }
   return getAPI(
     {

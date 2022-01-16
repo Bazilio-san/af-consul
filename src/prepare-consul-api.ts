@@ -5,7 +5,7 @@ import * as Consul from 'consul';
 import { Mutex } from 'async-mutex';
 // @ts-ignore
 import * as consulUtils from 'consul/lib/utils.js';
-import { cyan, magenta, reset, yellow } from './lib/color';
+import { blue, cyan, magenta, reset, yellow } from './lib/color';
 import getCurl from './lib/curl-text';
 import getHttpRequestText from './lib/http-request-text';
 import {
@@ -229,10 +229,13 @@ export const prepareConsulAPI = async (clOptions: ICLOptions): Promise<IConsulAP
       const isAlreadyRegistered = await this.checkIfServiceRegistered(serviceId, agentOptions);
       if (isAlreadyRegistered) {
         const isDeregister = await this.agentServiceDeregister(serviceId, agentOptions);
+
+        const m = (wasnt: string = '') => `Previous registration of service '${cyan}${serviceId}${reset}'${
+          wasnt} removed from consul agent ${blue}${agentHost}${reset}`;
         if (isDeregister) {
-          logger.info(`Previous registration of service '${cyan}${serviceId}${reset}' removed from Consul`);
+          logger.info(m());
         } else {
-          logger.error(`Previous registration of service '${cyan}${serviceId}${reset}' was NOT removed from Consul`);
+          logger.error(m(' was NOT'));
           return false;
         }
       } else {

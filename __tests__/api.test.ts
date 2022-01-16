@@ -16,14 +16,15 @@ let api: IApi;
 let thisHost: string;
 let expectedServiceIfo: IConsulServiceInfo;
 let serviceInfo: Maybe<IConsulServiceInfo>;
+const serviceId = 'dev-cepe01-af-consul-test';
 
 describe('Test API', () => {
   beforeAll(async () => {
     api = await getConsulAPI();
     thisHost = await getFQDNCached() || '';
     expectedServiceIfo = {
-      ID: 'dev-cepe01-af-consul-test',
-      Service: 'dev-cepe01-af-consul-test',
+      ID: serviceId,
+      Service: serviceId,
       Meta: {
         CONSUL_TEST: '12345',
         NODE_ENV: 'test',
@@ -42,11 +43,11 @@ describe('Test API', () => {
     };
   }, TIMEOUT_MILLIS);
 
-  test('register', async () => {
+  test('apiCache', async () => {
     expect(Object.keys(apiCache).length).toBe(1);
     for (let i = 1; i < 6; i++) {
       // eslint-disable-next-line no-await-in-loop
-      await getConsulAPI(String(i));
+      await getConsulAPI({ instanceSuffix: String(i) });
       console.log(api.serviceId);
     }
     expect(Object.keys(apiCache).length).toBe(MAX_API_CACHED);
@@ -80,5 +81,35 @@ describe('Test API', () => {
     serviceInfo.Meta.CONSUL_TEST = 'foo';
     const diff = serviceConfigDiff(api.registerConfig, serviceInfo);
     expect(diff.length).toBeGreaterThan(0);
+  }, TIMEOUT_MILLIS);
+
+  test('getServiceInfo (unknown service ID)', async () => {
+    serviceInfo = await api.getServiceInfo('dev-cepe01-foo-bar');
+    expect(serviceInfo).toBe(undefined);
+    expect(log.warn.mock.calls[0][0]).toMatch(/unknown service ID/);
+  }, TIMEOUT_MILLIS);
+
+  test('deregister', async () => {
+    log.info.mockClear();
+    const deregisterResult = await api.deregisterIfNeed(serviceId);
+    expect(deregisterResult).toBe(true);
+    expect(log.info.mock.calls.length).toBeGreaterThan(0);
+    expect(log.info.mock.calls[0][0]).toMatch(/Previous registration of service.+removed from consul/);
+  }, TIMEOUT_MILLIS);
+
+  test('register/deregister in another agent', async () => {
+    const agentHost = process.env.CONSUL_AGENT_HOST_2;
+    const api2 = await getConsulAPI({ agentHost });
+    log.info.mockClear();
+    const registerResult = await api2.register.once();
+    expect(!!registerResult).toBe(true);
+    expect(log.info.mock.calls.length).toBeGreaterThan(0);
+    expect(log.info.mock.calls[0][0]).toMatch(/Service.+ registered in Consul/);
+
+    log.info.mockClear();
+    const deregisterResult = await api.deregisterIfNeed(serviceId, agentHost, '8500');
+    expect(deregisterResult).toBe(true);
+    expect(log.info.mock.calls.length).toBeGreaterThan(0);
+    expect(log.info.mock.calls[0][0]).toMatch(/Previous registration of service.+removed from consul/);
   }, TIMEOUT_MILLIS);
 });
