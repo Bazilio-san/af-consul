@@ -82,7 +82,7 @@ export const prepareConsulAPI = async (clOptions: ICLOptions): Promise<IConsulAP
       const { res } = request || {};
       const { statusCode = 0, body = null } = res || {};
       debug(`${rqId}HTTP Status: ${statusCode}`);
-      if (statusCode > 299) {
+      if (statusCode > 299 && !request.skipCodes?.includes?.(statusCode)) {
         const serviceName = request._args?.[0]?.name ?? '';
         if (body) {
           logger.error(`${rqId}[${serviceName ? `consul.${serviceName}` : 'CONSUL'}] ERROR: ${JSON.stringify(body)}`);
@@ -156,7 +156,11 @@ export const prepareConsulAPI = async (clOptions: ICLOptions): Promise<IConsulAP
         consulUtils.options(req, opts);
         consulInstance._get(req, consulUtils.body, (err: Error | any, res: any) => {
           if (err) {
-            logger.error(`[consul.${fnName}] ERROR:\n  err.message: ${err.message}\n  err.stack:\n${err.stack}\n`);
+            if (err.statusCode === 404 && err.message.startsWith('unknown service ID')) {
+              logger.warn(`[consul.${fnName}] ${err.message}`);
+            } else {
+              logger.error(`[consul.${fnName}] ERROR:\n  err.message: ${err.message}\n  err.stack:\n${err.stack}\n`);
+            }
             return withError ? reject(err) : resolve(undefined);
           }
           resolve(res);

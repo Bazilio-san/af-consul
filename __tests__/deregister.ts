@@ -1,3 +1,4 @@
+// import 'dotenv/config';
 import getConsulAPI from './get-consul-api';
 
 getConsulAPI().then(({ deregister }) => {
