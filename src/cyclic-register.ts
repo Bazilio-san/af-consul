@@ -1,9 +1,9 @@
 // noinspection JSUnusedGlobalSymbols
 
-import loggerStub from './lib/logger-stub';
+import loggerStub from './logger-stub';
 import { ICLOptions, IConsulAPI, ICyclicStartArgs, IRegisterConfig, IRegisterCyclic } from './types';
-import { cyan, green, reset } from './lib/color';
-import { toMills } from './lib/utils';
+import { cyan, green, reset } from './color';
+import { toMills } from './utils';
 import { FORCE_EVERY_REGISTER_ATTEMPT } from './constants';
 
 const prefix = 'CONSUL-REG:';

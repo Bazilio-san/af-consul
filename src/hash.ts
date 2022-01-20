@@ -1,6 +1,6 @@
 import * as _ from 'lodash';
 import * as XXH from 'xxhashjs';
-import { ICLOptions, IConfig } from '../types';
+import { ICLOptions, IConfig } from './types';
 import { isObject } from './utils';
 
 const getHash = (data: any, base: '32' | '64' = '32', seed: number = 0xCAFEBABE) => {

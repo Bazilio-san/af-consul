@@ -4,13 +4,13 @@
 import { IApi, ICache, ICLOptions, IConsulAPI, TRegisterType } from './types';
 import { getConsulApiCached } from './prepare-consul-api';
 import { CONSUL_DEBUG_ON, MAX_API_CACHED, PREFIX } from './constants';
-import { getConfigHash } from './lib/hash';
+import { getConfigHash } from './hash';
 import { getRegisterConfig } from './get-register-config';
-import { minimizeCache } from './lib/utils';
+import { minimizeCache } from './utils';
 import { getRegisterCyclic } from './cyclic-register';
-import { magenta, reset, yellow } from './lib/color';
+import { magenta, reset, yellow } from './color';
 
-export { accessPointsUpdater } from './access-points/access-points-updater';
+export { accessPointsUpdater } from './access-points-updater';
 
 const defaultGetConsulUIAddress = (serviceId: string): string => {
   const { NODE_ENV, CONSUL_UI_HOST, CONSUL_DC_PROD, CONSUL_DC_DEV } = process.env;

@@ -1,5 +1,5 @@
 /* eslint-disable no-console */
-import { substitute } from '../src/lib/utils';
+import { substitute } from '../src/utils';
 
 const TIMEOUT_MILLIS = 100_000;
 

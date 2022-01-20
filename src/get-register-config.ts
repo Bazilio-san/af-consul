@@ -1,6 +1,6 @@
-import { getPackageJson, parseMeta, parseTags, removeAroundQuotas } from './lib/utils';
+import { getPackageJson, parseMeta, parseTags, removeAroundQuotas } from './utils';
 import { ICLOptions, IRegisterConfig } from './types';
-import { getFQDNCached } from './lib/fqdn';
+import { getFQDNCached } from './fqdn';
 import { PREFIX } from './constants';
 
 export const getServiceID = (name: string, instance: string, projectId: string = '') => {
