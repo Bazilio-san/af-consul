@@ -1,6 +1,6 @@
 import * as _ from 'lodash';
 import * as XXH from 'xxhashjs';
-import { ICLOptions, IConfig } from '../interfaces';
+import { ICLOptions, IAFConsulConfig } from '../interfaces';
 import { isObject } from './utils';
 
 const getHash = (data: any, base: '32' | '64' = '32', seed: number = 0xCAFEBABE) => {
@@ -48,7 +48,7 @@ const getHash = (data: any, base: '32' | '64' = '32', seed: number = 0xCAFEBABE)
 
 export const getConfigHash = (options: ICLOptions): string => {
   const opt = _.pick(options, ['config', 'projectId']);
-  opt.config = _.pick(opt.config, ['consul', 'webServer']) as IConfig;
+  opt.config = _.pick(opt.config, ['consul', 'webServer']) as IAFConsulConfig;
   const hash = getHash(opt);
   options.hash = hash;
   return hash;

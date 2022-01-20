@@ -11,7 +11,7 @@ import getHttpRequestText from './lib/http-request-text';
 import {
   ICache,
   ICLOptions,
-  IConfig,
+  IAFConsulConfig,
   IConsul,
   IConsulAgentOptions,
   IConsulAPI,
@@ -38,7 +38,7 @@ const debug = (msg: string) => {
   }
 };
 
-const getConsulAgentOptions = async (config: IConfig): Promise<IConsulAgentOptions> => {
+const getConsulAgentOptions = async (config: IAFConsulConfig): Promise<IConsulAgentOptions> => {
   const { host, port, secure, token } = config.consul.agent;
   const host_ = host || (await getFQDNCached()) || process.env.HOST_HOSTNAME || config.consul.service?.host || '127.0.0.1';
   return {

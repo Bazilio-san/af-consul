@@ -79,7 +79,7 @@ export interface IAccessPoints {
   [apKey: string]: IAccessPoint;
 }
 
-export interface IConfig {
+export interface IAFConsulConfig {
   accessPoints?: IAccessPoints,
   consul: {
     agent: {
@@ -108,7 +108,7 @@ export type TCommonFnResult = any;
 type TMethod<T> = (...args: any[]) => T;
 
 export interface ICLOptions {
-  config: IConfig,
+  config: IAFConsulConfig,
   logger?: ILogger,
   em?: EventEmitter,
 
@@ -146,7 +146,7 @@ export interface IConsulAPI {
   registerService: (registerConfig: IRegisterConfig, registerOptions: IRegisterOptions) => Promise<TRegisterResult>,
 
   agentOptions: IConsulAgentOptions,
-  getConsulAgentOptions: (config: IConfig) => Promise<IConsulAgentOptions>,
+  getConsulAgentOptions: (config: IAFConsulConfig) => Promise<IConsulAgentOptions>,
 }
 
 export interface ICyclicStartArgs {
