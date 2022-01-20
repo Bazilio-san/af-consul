@@ -3,7 +3,7 @@ import * as _ from 'lodash';
 import os from 'os';
 import { logger } from './logger';
 import { getAPI } from '../src';
-import { IApi } from '../src/interfaces';
+import { IAFConsulAPI } from '../src/interfaces';
 
 const cfg = {
   consul: {
@@ -41,7 +41,7 @@ const cfg = {
 
 export default async ({ instanceSuffix, agentHost }: {
   instanceSuffix?: string, agentHost?: string
-} = {}): Promise<IApi> => {
+} = {}): Promise<IAFConsulAPI> => {
   const config = _.cloneDeep(cfg);
   if (instanceSuffix) {
     config.consul.service.instance += instanceSuffix;

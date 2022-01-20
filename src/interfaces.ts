@@ -172,7 +172,7 @@ export interface IRegisterCyclic {
   stop: () => void
 }
 
-export interface IApi extends IConsulAPI {
+export interface IAFConsulAPI extends IConsulAPI {
   registerConfig: IRegisterConfig,
   getConsulUIAddress: TMethod<string>,
   serviceId: string,

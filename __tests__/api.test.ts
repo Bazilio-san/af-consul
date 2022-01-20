@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 import getConsulAPI from './get-consul-api';
 import { logger } from './logger';
-import { IApi, IConsulServiceInfo, Maybe } from '../src/interfaces';
+import { IAFConsulAPI, IConsulServiceInfo, Maybe } from '../src/interfaces';
 import { ILoggerMocked, mockLogger } from './test-utils';
 import { getFQDNCached } from '../src';
 import { serviceConfigDiff } from '../src/lib/utils';
@@ -12,7 +12,7 @@ const TIMEOUT_MILLIS = 100_000;
 
 const log: ILoggerMocked = mockLogger(logger);
 
-let api: IApi;
+let api: IAFConsulAPI;
 let thisHost: string;
 let expectedServiceIfo: IConsulServiceInfo;
 let serviceInfo: Maybe<IConsulServiceInfo>;

@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 // noinspection JSUnusedGlobalSymbols
 
-import { IApi, ICache, ICLOptions, IConsulAPI, TRegisterType } from './interfaces';
+import { IAFConsulAPI, ICache, ICLOptions, IConsulAPI, TRegisterType } from './interfaces';
 import { getConsulApiCached } from './prepare-consul-api';
 import { CONSUL_DEBUG_ON, MAX_API_CACHED, PREFIX } from './constants';
 import { getConfigHash } from './lib/hash';
@@ -26,12 +26,12 @@ const debug = (msg: string) => {
 
 // cached
 
-export const apiCache: ICache<IApi> = {};
+export const apiCache: ICache<IAFConsulAPI> = {};
 
-export const getAPI = async (options: ICLOptions): Promise<IApi> => {
+export const getAPI = async (options: ICLOptions): Promise<IAFConsulAPI> => {
   const hash = getConfigHash(options);
   if (!apiCache[hash]) {
-    const api: IConsulAPI = await getConsulApiCached(options) as IApi;
+    const api: IConsulAPI = await getConsulApiCached(options) as IAFConsulAPI;
     const registerConfig = await getRegisterConfig(options);
     const serviceId = registerConfig.id;
     minimizeCache(apiCache, MAX_API_CACHED);
@@ -47,7 +47,7 @@ export const getAPI = async (options: ICLOptions): Promise<IApi> => {
         cyclic: getRegisterCyclic(options, api, registerConfig),
       },
       deregister: (svcId?: string, agentHost?: string, agentPort?: string) => api.deregisterIfNeed(svcId || serviceId, agentHost, agentPort),
-    } as IApi;
+    } as IAFConsulAPI;
 
     Object.entries(api).forEach(([k, v]) => {
       value[k] = typeof v === 'function' ? v.bind(api) : v;
