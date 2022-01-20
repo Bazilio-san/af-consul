@@ -83,6 +83,7 @@ export interface IAFConsulConfig {
   accessPoints?: IAccessPoints,
   consul: {
     agent: {
+      isRegisterServiceOnStart?: boolean,
       host?: string, // || FQDN || env.HOST_HOSTNAME || config.consul.service?.host || '127.0.0.1'
       port?: string, // || 8500
       secure?: boolean,
