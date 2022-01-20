@@ -1,5 +1,6 @@
 import Consul from 'consul';
 import EventEmitter from 'events';
+import { AccessPoints } from './access-points/access-points';
 
 export type Maybe<T> = T | undefined;
 export type Nullable<T> = T | null;
@@ -80,7 +81,7 @@ export interface IAccessPoints {
 }
 
 export interface IAFConsulConfig {
-  accessPoints?: IAccessPoints,
+  accessPoints?: IAccessPoints | AccessPoints,
   consul: {
     agent: {
       isRegisterServiceOnStart?: boolean,
