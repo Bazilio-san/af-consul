@@ -1,7 +1,7 @@
 // noinspection JSUnusedGlobalSymbols
 
 import loggerStub from './logger-stub';
-import { ICLOptions, IConsulAPI, ICyclicStartArgs, IRegisterConfig, IRegisterCyclic } from './types';
+import { ICLOptions, IConsulAPI, ICyclicStartArgs, IRegisterConfig, IRegisterCyclic } from './interfaces';
 import { cyan, green, reset } from './color';
 import { toMills } from './utils';
 import { FORCE_EVERY_REGISTER_ATTEMPT } from './constants';

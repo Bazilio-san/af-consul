@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 // noinspection JSUnusedGlobalSymbols
 
-import { IApi, ICache, ICLOptions, IConsulAPI, TRegisterType } from './types';
+import { IApi, ICache, ICLOptions, IConsulAPI, TRegisterType } from './interfaces';
 import { getConsulApiCached } from './prepare-consul-api';
 import { CONSUL_DEBUG_ON, MAX_API_CACHED, PREFIX } from './constants';
 import { getConfigHash } from './hash';

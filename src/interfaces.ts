@@ -1,5 +1,5 @@
-import Consul from "consul";
-import EventEmitter from "events";
+import Consul from 'consul';
+import EventEmitter from 'events';
 
 export type Maybe<T> = T | undefined;
 export type Nullable<T> = T | null;
@@ -43,7 +43,6 @@ export interface IConsul extends Consul.Consul {
   _defaults: any;
   _get: (...args: any[]) => any;
 }
-
 
 export interface IConsulAgentOptions extends Consul.ConsulOptions {
   host: string;
@@ -104,6 +103,10 @@ export interface IConfig {
   webServer: any,
 }
 
+export type TCommonFnResult = any;
+
+type TMethod<T> = (...args: any[]) => T;
+
 export interface ICLOptions {
   config: IConfig,
   logger?: ILogger,
@@ -114,9 +117,21 @@ export interface ICLOptions {
   hash?: string,
 }
 
-export type TCommonFnResult = any;
+export interface IConsulServiceInfo {
+  ID: string,
+  Service: string,
+  Tags?: string[],
+  Meta?: {
+    [prop: string]: Nullable<string | number | boolean>,
+  },
+  Port: number,
+  Address: string,
+  Weights?: { Passing: number, Warning: number },
+  EnableTagOverride?: boolean,
+  Datacenter?: string,
 
-type TMethod<T> = (...args: any[]) => T;
+  [prop: string]: any,
+}
 
 export interface IConsulAPI {
   agentServiceList: (agentOptions?: IConsulAgentOptions, withError?: boolean) => Promise<{ [serviceName: string]: IConsulServiceInfo }>,
@@ -148,7 +163,7 @@ export interface IRegisterCyclic {
   healthCheckIntervalMillis: number,
   registerIntervalMillis: number,
   options: ICLOptions,
-  _timerId: NodeJS.Timeout,
+  _timerId: ReturnType<typeof setTimeout>,
   _logger: ILogger,
 
   start: (cyclicStartArgs?: ICyclicStartArgs) => Promise<-1 | 0 | 1>
@@ -164,23 +179,6 @@ export interface IApi extends IConsulAPI {
     cyclic: IRegisterCyclic,
   }
   deregister: (svcId?: string, agentHost?: string, agentPort?: string) => Promise<boolean>
-}
-
-
-export interface IConsulServiceInfo {
-  ID: string,
-  Service: string,
-  Tags?: string[],
-  Meta?: {
-    [prop: string]: Nullable<string | number | boolean>,
-  },
-  Port: number,
-  Address: string,
-  Weights?: { Passing: number, Warning: number },
-  EnableTagOverride?: boolean,
-  Datacenter?: string,
-
-  [prop: string]: any,
 }
 
 export interface ICache<T> {

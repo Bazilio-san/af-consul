@@ -3,7 +3,7 @@ import * as _ from 'lodash';
 import os from 'os';
 import { logger } from './logger';
 import { getAPI } from '../src';
-import { IApi } from '../src/types';
+import { IApi } from '../src/interfaces';
 
 const cfg = {
   consul: {

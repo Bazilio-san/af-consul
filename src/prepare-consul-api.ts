@@ -22,7 +22,7 @@ import {
   ISocketInfo,
   Maybe,
   TRegisterResult,
-} from './types';
+} from './interfaces';
 import loggerStub from './logger-stub';
 import { getFQDNCached } from './fqdn';
 import { CONSUL_DEBUG_ON, DEBUG, MAX_API_CACHED, PREFIX } from './constants';

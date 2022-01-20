@@ -1,5 +1,5 @@
 import { getPackageJson, parseMeta, parseTags, removeAroundQuotas } from './utils';
-import { ICLOptions, IRegisterConfig } from './types';
+import { ICLOptions, IRegisterConfig } from './interfaces';
 import { getFQDNCached } from './fqdn';
 import { PREFIX } from './constants';
 

@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 import getConsulAPI from './get-consul-api';
 import { logger } from './logger';
-import { IApi, IConsulServiceInfo, Maybe } from '../src/types';
+import { IApi, IConsulServiceInfo, Maybe } from '../src/interfaces';
 import { ILoggerMocked, mockLogger } from './test-utils';
 import { getFQDNCached } from '../src';
 import { serviceConfigDiff } from '../src/utils';

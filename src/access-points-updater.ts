@@ -4,7 +4,7 @@
 import { cyan, green, magenta, red, reset } from './color';
 import loggerStub from './logger-stub';
 import { getConsulApiCached } from './index';
-import { IAccessPoint, IAccessPoints, ICLOptions, IConsulAPI } from './types';
+import { IAccessPoint, IAccessPoints, ICLOptions, IConsulAPI } from './interfaces';
 import { sleep } from './utils';
 import { DEBUG } from './constants';
 

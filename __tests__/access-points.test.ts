@@ -1,7 +1,7 @@
 import { AccessPoints } from '../src';
 import { logger } from './logger';
 import { setProperty } from './test-utils';
-import { IAccessPoint } from '../src/types';
+import { IAccessPoint } from '../src/interfaces';
 
 const config = {
   accessPoints: {
