@@ -1,12 +1,12 @@
 /* eslint-disable no-console */
 // noinspection JSUnusedGlobalSymbols
 
-import { cyan, green, magenta, red, reset } from './color';
-import loggerStub from './logger-stub';
-import { getConsulApiCached } from './index';
-import { IAccessPoint, IAccessPoints, ICLOptions, IConsulAPI } from './interfaces';
-import { sleep } from './utils';
-import { DEBUG } from './constants';
+import { cyan, green, magenta, red, reset } from '../lib/color';
+import loggerStub from '../lib/logger-stub';
+import { getConsulApiCached } from '../index';
+import { IAccessPoint, IAccessPoints, ICLOptions, IConsulAPI } from '../interfaces';
+import { sleep } from '../lib/utils';
+import { DEBUG } from '../constants';
 
 const PREFIX = 'AP-UPDATER';
 

@@ -1,6 +1,6 @@
 import * as os from 'os';
 import * as dns from 'dns';
-import { ICache } from './interfaces';
+import { ICache } from '../interfaces';
 import { minimizeCache } from './utils';
 
 // Returns fully qualified domain name
