@@ -47,8 +47,7 @@ const getHash = (data: any, base: '32' | '64' = '32', seed: number = 0xCAFEBABE)
 };
 
 export const getConfigHash = (options: ICLOptions): string => {
-  const opt = _.pick(options, ['config', 'projectId']);
-  opt.config = _.pick(opt.config, ['consul', 'webServer']) as IAFConsulConfig;
+  const opt = _.pick(options.config, ['consul', 'webServer']) as IAFConsulConfig;
   const hash = getHash(opt);
   options.hash = hash;
   return hash;
