@@ -68,6 +68,7 @@ export async function updateAccessPoint(clOptions: ICLOptions, accessPoint: IAcc
   const changes = accessPoint.setProps?.(properties)?.getChanges?.();
 
   if (changes?.length) {
+    accessPoint.meta = meta;
     clOptions.em?.emit('access-point-updated', { accessPoint, changes });
   } else {
     debug(`${green}The data is up-to-date ${CONSUL_ID}`);
