@@ -1,6 +1,6 @@
 import * as _ from 'lodash';
 import * as XXH from 'xxhashjs';
-import { ICLOptions, IAFConsulConfig } from '../interfaces';
+import { IAFConsulConfig, ICLOptions } from '../interfaces';
 import { isObject } from './utils';
 
 const getHash = (data: any, base: '32' | '64' = '32', seed: number = 0xCAFEBABE) => {
@@ -46,9 +46,9 @@ const getHash = (data: any, base: '32' | '64' = '32', seed: number = 0xCAFEBABE)
   return XXH[`h${base}`](stringToHash, seed).toString(16);
 };
 
-export const getConfigHash = (options: ICLOptions): string => {
+export const getConfigHash = (options: ICLOptions, returnCommonAgent?: boolean): string => {
   const opt = _.pick(options.config, ['consul', 'webServer']) as IAFConsulConfig;
-  const hash = getHash(opt);
+  const hash = getHash({ opt, r: !!returnCommonAgent });
   options.hash = hash;
   return hash;
 };

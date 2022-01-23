@@ -91,6 +91,11 @@ export interface IAFConsulConfig {
       port?: string, // || 8500
       secure?: boolean,
       token?: string,
+      common?: {
+        host?: string, // || FQDN || env.HOST_HOSTNAME || config.consul.service?.host || '127.0.0.1'
+        port?: string, // || 8500
+        secure?: boolean,
+      }
     },
     check?: IRegisterCheck,
     service: {
@@ -150,7 +155,7 @@ export interface IConsulAPI {
   registerService: (registerConfig: IRegisterConfig, registerOptions: IRegisterOptions) => Promise<TRegisterResult>,
 
   agentOptions: IConsulAgentOptions,
-  getConsulAgentOptions: (config: IAFConsulConfig) => Promise<IConsulAgentOptions>,
+  getConsulAgentOptions: (clOptions: ICLOptions, returnCommonAgent?: boolean) => Promise<IConsulAgentOptions>,
 }
 
 export interface ICyclicStartArgs {

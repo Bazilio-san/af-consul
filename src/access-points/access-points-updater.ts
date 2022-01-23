@@ -45,7 +45,7 @@ export async function updateAccessPoint(clOptions: ICLOptions, accessPoint: IAcc
     // Точка доступа еще опрошена в этом цикле и есть сведения по ней. В этом просе будут взяты другие метаданные, нежели в предыдущем updateAccessPoint
   } else {
     // Точка доступа еще не опрошена в этом цикле
-    const consulApi: IConsulAPI = await getConsulApiCached(clOptions);
+    const consulApi: IConsulAPI = await getConsulApiCached(clOptions); // returnCommonAgent = false
     if (!consulApi) {
       clOptions.logger?.warn(`${PREFIX}: Failed to get consul API`);
       return -2;

@@ -1,9 +1,11 @@
 import 'dotenv/config';
 import * as _ from 'lodash';
-import os from 'os';
+import * as os from 'os';
 import { logger } from './logger';
 import { getAPI } from '../src';
 import { IAFConsulAPI } from '../src/interfaces';
+
+const thisHostName = os.hostname();
 
 const cfg = {
   consul: {
@@ -13,9 +15,14 @@ const cfg = {
       deregistercriticalserviceafter: process.env.CONSUL_DEREGISTER_CRITICAL_SERVICE_AFTER || '3m',
     },
     agent: {
-      host: process.env.CONSUL_AGENT_HOST || os.hostname(),
+      host: process.env.CONSUL_AGENT_HOST || thisHostName,
       port: process.env.CONSUL_AGENT_PORT || '8500',
       secure: !!process.env.CONSUL_AGENT_SECURE,
+      common: {
+        host: process.env.CONSUL_AGENT_COMMON_HOST || thisHostName,
+        port: process.env.CONSUL_AGENT_COMMON_PORT || '8500',
+        secure: !!process.env.CONSUL_AGENT_COMMON_SECURE,
+      },
       token: process.env.CONSUL_AGENT_TOKEN,
     },
     service: {

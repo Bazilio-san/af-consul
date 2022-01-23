@@ -1,6 +1,7 @@
 /* eslint-disable no-console */
 // noinspection UnnecessaryLocalVariableJS,JSUnusedGlobalSymbols
 
+import * as _ from 'lodash';
 import * as Consul from 'consul';
 import { Mutex } from 'async-mutex';
 // @ts-ignore
@@ -11,7 +12,6 @@ import getHttpRequestText from './lib/http-request-text';
 import {
   ICache,
   ICLOptions,
-  IAFConsulConfig,
   IConsul,
   IConsulAgentOptions,
   IConsulAPI,
@@ -38,8 +38,13 @@ const debug = (msg: string) => {
   }
 };
 
-const getConsulAgentOptions = async (config: IAFConsulConfig): Promise<IConsulAgentOptions> => {
-  const { host, port, secure, token } = config.consul.agent;
+const getConsulAgentOptions = async (clOptions: ICLOptions, returnCommonAgent?: boolean): Promise<IConsulAgentOptions> => {
+  const { config } = clOptions;
+  let agent = { ..._.pick(config.consul.agent, ['host', 'port', 'secure', 'token']) };
+  if (returnCommonAgent) {
+    agent = { ...agent, ...(config.consul.agent.common || {}) };
+  }
+  const { host, port, secure, token } = agent;
   const host_ = host || (await getFQDNCached()) || process.env.HOST_HOSTNAME || config.consul.service?.host || '127.0.0.1';
   return {
     host: host_,
@@ -51,12 +56,12 @@ const getConsulAgentOptions = async (config: IAFConsulConfig): Promise<IConsulAg
 
 let requestCounter = 0;
 
-export const prepareConsulAPI = async (clOptions: ICLOptions): Promise<IConsulAPI> => {
+export const prepareConsulAPI = async (clOptions: ICLOptions, returnCommonAgent?: boolean): Promise<IConsulAPI> => {
   let logger = (clOptions.logger || loggerStub) as ILogger;
   if (!logger?.info) {
     logger = loggerStub;
   }
-  const consulAgentOptions: IConsulAgentOptions = await getConsulAgentOptions(clOptions.config);
+  const consulAgentOptions: IConsulAgentOptions = await getConsulAgentOptions(clOptions, returnCommonAgent);
   if (dbg.on) {
     debug(`CONSUL AGENT OPTIONS:\n${JSON.stringify(consulAgentOptions, undefined, 2)}`);
   }
@@ -307,12 +312,12 @@ export const prepareConsulAPI = async (clOptions: ICLOptions): Promise<IConsulAP
 
 const consulApiCache: ICache<IConsulAPI> = {};
 
-export const getConsulApiCached = async (clOptions: ICLOptions): Promise<IConsulAPI> => mutex
+export const getConsulApiCached = async (clOptions: ICLOptions, returnCommonAgent?: boolean): Promise<IConsulAPI> => mutex
   .runExclusive<IConsulAPI>(async () => {
-    const hash = getConfigHash(clOptions);
+    const hash = getConfigHash(clOptions, returnCommonAgent);
     if (!consulApiCache[hash]) {
       minimizeCache(consulApiCache, MAX_API_CACHED);
-      const value = await prepareConsulAPI(clOptions);
+      const value = await prepareConsulAPI(clOptions, returnCommonAgent);
       consulApiCache[hash] = { created: Date.now(), value };
     }
     return consulApiCache[hash].value;
