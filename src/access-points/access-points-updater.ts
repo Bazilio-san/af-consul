@@ -56,8 +56,10 @@ export async function updateAccessPoint(clOptions: ICLOptions, accessPoint: IAcc
   if (!host || !meta) {
     clOptions.logger?.warn(`${red}There is no information for ${CONSUL_ID}`);
     accessPoint.lastSuccessUpdate = 0;
+    accessPoint.isReachable = false;
     return -1;
   }
+  accessPoint.isReachable = true;
   accessPoint.lastSuccessUpdate = Date.now();
 
   // If the retrieveProps function is not set for the access point in the configuration, use the stub
