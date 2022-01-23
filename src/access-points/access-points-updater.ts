@@ -25,7 +25,7 @@ function retrieveProps(accessPoint: IAccessPoint, host: string, meta: any) {
   return { host, port };
 }
 
-let cache = {};
+let oneUpdateCache = {}; // Служит для исключения повторного опроса consulID в пределах одного цикла updateAccessPoints
 
 export async function updateAccessPoint(clOptions: ICLOptions, accessPoint: IAccessPoint): Promise<-2 | -1 | 0 | 1> {
   if (!accessPoint.updateIntervalIfSuccessMillis) {
@@ -36,12 +36,15 @@ export async function updateAccessPoint(clOptions: ICLOptions, accessPoint: IAcc
   }
   const { consulServiceName } = accessPoint;
   const CONSUL_ID = `${cyan}${consulServiceName}${reset}`;
-  let result = cache[consulServiceName];
+  let result = oneUpdateCache[consulServiceName];
   if (result) {
-    if (!result.length) {
+    if (result.length) {
+      // Точка доступа уже опрошена в этом цикле и она была недоступна
       return 0;
     }
+    // Точка доступа еще опрошена в этом цикле и есть сведения по ней. В этом просе будут взяты другие метаданные, нежели в предыдущем updateAccessPoint
   } else {
+    // Точка доступа еще не опрошена в этом цикле
     const consulApi: IConsulAPI = await getConsulApiCached(clOptions);
     if (!consulApi) {
       clOptions.logger?.warn(`${PREFIX}: Failed to get consul API`);
@@ -49,7 +52,7 @@ export async function updateAccessPoint(clOptions: ICLOptions, accessPoint: IAcc
     }
     debug(`${reset}Polling ${CONSUL_ID}`);
     result = await consulApi.consulHealthService({ service: consulServiceName, passing: true });
-    cache[consulServiceName] = result;
+    oneUpdateCache[consulServiceName] = result;
   }
 
   const { Address: host, Meta: meta } = result?.[0]?.Service || {};
@@ -111,7 +114,7 @@ export const accessPointsUpdater = {
     this._logger = clOptions.logger || loggerStub;
     const doLoop = async () => {
       try {
-        cache = {};
+        oneUpdateCache = {};
         const isAnyUpdated = await updateAccessPoints(clOptions);
         if (isAnyUpdated) {
           this.isAnyUpdated = true;
