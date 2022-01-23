@@ -56,7 +56,11 @@ export async function updateAccessPoint(clOptions: ICLOptions, accessPoint: IAcc
   if (!host || !meta) {
     clOptions.logger?.warn(`${red}There is no information for ${CONSUL_ID}`);
     accessPoint.lastSuccessUpdate = 0;
+    const wasReachable = accessPoint.isReachable;
     accessPoint.isReachable = false;
+    if (wasReachable) {
+      clOptions.em?.emit('access-point-updated', { accessPoint, changes: [['isReachable', true, false]] });
+    }
     return -1;
   }
   accessPoint.isReachable = true;
