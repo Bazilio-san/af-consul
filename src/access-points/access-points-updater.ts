@@ -107,7 +107,7 @@ export const accessPointsUpdater = {
   isAnyUpdated: false,
   _timerId: setTimeout(() => null, 0),
   _logger: loggerStub,
-  async start(clOptions: ICLOptions, updateInterval: number = 10_000): Promise<number> {
+  start(clOptions: ICLOptions, updateInterval: number = 10_000): number {
     if (this.isStarted) {
       return 0;
     }
