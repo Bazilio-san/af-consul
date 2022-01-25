@@ -3,10 +3,10 @@
 export const reset = '\x1b[0m';
 export const rs = reset;
 export const clear = '\x1b[K';
-export const Bold = '\x1b[1m';
-export const BoldOff = '\x1b[21m';
-export const Italics = '\x1b[3m';
-export const ItalicsOff = '\x1b[23m';
+export const bold = '\x1b[1m';
+export const boldOff = '\x1b[21m';
+export const italics = '\x1b[3m';
+export const italicsOff = '\x1b[23m';
 export const def = '\x1b[39m';
 
 export const white = '\x1b[37m';

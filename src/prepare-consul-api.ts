@@ -268,7 +268,7 @@ export const prepareConsulAPI = async (clOptions: ICLOptions, returnCommonAgent?
       const diff = serviceConfigDiff(registerConfig, serviceInfo);
       const isAlreadyRegistered = !!serviceInfo;
 
-      const already = async (): Promise<TRegisterResult> => {
+      const already = (): TRegisterResult => {
         if (!registerOptions.noAlreadyRegisteredMessage) {
           logger.info(`${srv} already registered in Consul`);
         }
