@@ -4,6 +4,9 @@ import { getFQDNCached } from './lib/fqdn';
 import { PREFIX } from './constants';
 
 export const getServiceID = (name: string, instance: string, projectId: string = '') => {
+  if (process.env.CONSUL_SERVICE_ID) {
+    return process.env.CONSUL_SERVICE_ID;
+  }
   const p = process.env.NODE_ENV === 'production';
   return `${p ? 'prd' : 'dev'}-${projectId || ''}${p ? 'r' : 'e'}01-${name}-${instance}`.toLowerCase();
 };
