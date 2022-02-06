@@ -73,12 +73,12 @@ export const getRegisterCyclic = (
     };
     doLoop().then((r) => r);
     this.isStarted = true;
-    this._logger.info(`Cyclic Register of service ${registerConfig.id} started`);
+    this._logger.info(`Cyclic Register of service ${cyan}${registerConfig.id}${reset} started. Agent host: ${cyan}${consulApi.agentOptions.host}${reset}`);
     return 1;
   },
   stop() {
     clearTimeout(this._timerId);
     this.isStarted = false;
-    this._logger.info(`Cyclic Register of service ${registerConfig.id} stopped`);
+    this._logger.info(`Cyclic Register of service ${cyan}${registerConfig.id}${reset} stopped`);
   },
 });
