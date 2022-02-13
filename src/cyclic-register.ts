@@ -73,7 +73,7 @@ export const getRegisterCyclic = (
     };
     doLoop().then((r) => r);
     this.isStarted = true;
-    const { host, port, defaults } = consulApi.agentOptions;
+    const { host, port, defaults } = consulApi.agentOptions.reg;
     this._logger.info(`Cyclic Register of service ${cyan}${registerConfig.id}${reset} started. Agent: ${
       cyan}${host}:${port}${reset}, token: ${cyan}${defaults?.token?.substring(0, 4)}***${reset}`);
     return 1;

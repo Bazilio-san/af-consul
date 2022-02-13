@@ -4,6 +4,7 @@ import { AccessPoints } from './access-points/access-points';
 
 export type Maybe<T> = T | undefined;
 export type Nullable<T> = T | null;
+export type TBooleanLike = 'true' | 'false' | 'yes' | 'no' | '1' | '0' | 1 | 0;
 
 export interface ISocketInfo {
   host: string;
@@ -48,6 +49,13 @@ export interface IConsul extends Consul.Consul {
 export interface IConsulAgentOptions extends Consul.ConsulOptions {
   host: string;
   port: string;
+  dc?: string;
+}
+
+export interface IFullConsulAgentOptions {
+  reg: IConsulAgentOptions,
+  dev: IConsulAgentOptions,
+  prd: IConsulAgentOptions
 }
 
 export type TLoggerMethod = (...args: unknown[]) => any;
@@ -60,6 +68,10 @@ export interface ILogger {
   error: TLoggerMethod;
 }
 
+export interface IMeta {
+  [prop: string]: Nullable<string | number | boolean>,
+}
+
 export interface IAccessPoint {
   consulServiceName: string,
   id?: string,
@@ -68,7 +80,7 @@ export interface IAccessPoint {
   host?: string | null,
   setProps?: (data: Record<string, any> | null) => IAccessPoint | undefined,
   isAP?: true,
-  meta?: { [propName: string]: string },
+  meta?: IMeta,
   isReachable?: boolean,
   lastSuccessUpdate?: number,
   idHostPortUpdated?: boolean,
@@ -82,33 +94,39 @@ export interface IAccessPoints {
   [apKey: string]: IAccessPoint;
 }
 
+export interface IConsulAgentConfig {
+  isRegisterServiceOnStart?: boolean,
+  host?: string, // || FQDN || env.HOST_HOSTNAME || config.consul.service?.host || '127.0.0.1'
+  port?: string, // || 8500
+  secure?: string | TBooleanLike | boolean,
+  token?: string,
+  dc?: string;
+}
+
+export interface IFullConsulAgentConfig {
+  reg: IConsulAgentConfig,
+  dev?: IConsulAgentConfig,
+  prd?: IConsulAgentConfig
+}
+
 export interface IAFConsulConfig {
-  accessPoints?: IAccessPoints | AccessPoints,
-  consul: {
-    agent: {
-      isRegisterServiceOnStart?: boolean,
-      host?: string, // || FQDN || env.HOST_HOSTNAME || config.consul.service?.host || '127.0.0.1'
-      port?: string, // || 8500
-      secure?: boolean,
-      token?: string,
-      common?: {
-        host?: string, // || FQDN || env.HOST_HOSTNAME || config.consul.service?.host || '127.0.0.1'
-        port?: string, // || 8500
-        secure?: boolean,
-      }
-    },
-    check?: IRegisterCheck,
-    service: {
-      name: string,
-      instance: string,
-      version: string,
-      description: string,
-      tags?: string | string[],
-      meta?: string | object,
-      host?: Nullable<string>,
-      port?: Nullable<string | number>
-    },
+  agent: IFullConsulAgentConfig,
+  check?: IRegisterCheck,
+  service: {
+    name: string,
+    instance: string,
+    version: string,
+    description: string,
+    tags?: string | string[],
+    meta?: string | IMeta,
+    host?: Nullable<string>,
+    port?: Nullable<string | number>
   },
+}
+
+export interface IAFConfig {
+  accessPoints?: IAccessPoints | AccessPoints,
+  consul: IAFConsulConfig,
   webServer: any,
 }
 
@@ -117,7 +135,7 @@ export type TCommonFnResult = any;
 type TMethod<T> = (...args: any[]) => T;
 
 export interface ICLOptions {
-  config: IAFConsulConfig,
+  config: IAFConfig,
   logger?: ILogger,
   em?: EventEmitter,
 
@@ -130,32 +148,62 @@ export interface IConsulServiceInfo {
   ID: string,
   Service: string,
   Tags?: string[],
-  Meta?: {
-    [prop: string]: Nullable<string | number | boolean>,
-  },
+  Meta?: IMeta,
   Port: number,
   Address: string,
   Weights?: { Passing: number, Warning: number },
   EnableTagOverride?: boolean,
   Datacenter?: string,
 
+  // Service attributes
+  Proxy?: object, // { MeshGateway: {}, Expose: {} }
+  Connect?: object, // { MeshGateway: {}, Expose: {} }
+  CreateIndex?: number,
+  ModifyIndex?: number,
+
   [prop: string]: any,
 }
 
+export interface IConsulNodeInfo {
+  ID: string,
+  Node?: string,
+  Address: string,
+  Datacenter?: string,
+  TaggedAddresses?: object, // { lan: <ip>, lan_ipv4: <ip>, wan: <ip>, wan_ipv4: <ip> }
+  Meta?: IMeta,
+  CreateIndex?: number,
+  ModifyIndex?: number,
+}
+
+export interface IConsulHealthServiceInfo {
+  Node?: IConsulNodeInfo,
+  Service?: IConsulServiceInfo,
+  Checks?: any[]
+}
+
+export interface IAPIArgs {
+  consulInstance?: IConsul,
+  agentOptions?: IConsulAgentOptions,
+  options?: any;
+  withError?: boolean;
+  result?: any
+}
+
 export interface IConsulAPI {
-  agentServiceList: (agentOptions?: IConsulAgentOptions, withError?: boolean) => Promise<{ [serviceName: string]: IConsulServiceInfo }>,
-  consulHealthService: (options: Consul.Health.ServiceOptions, withError?: boolean) => Promise<TCommonFnResult>,
-  getServiceInfo: (serviceName: string, withError?: boolean) => Promise<Maybe<IConsulServiceInfo>>,
+  agentServiceList: (apiArgs?: IAPIArgs) => Promise<{ [serviceName: string]: IConsulServiceInfo }>,
+  catalogServiceList(dc: string, apiArgs?: IAPIArgs): Promise<{ [serviceId: string]: string[] }>,
+  consulHealthService: (apiArgs: IAPIArgs) => Promise<IConsulHealthServiceInfo[]>,
+  getServiceInfo: (serviceName: string) => Promise<Maybe<IConsulServiceInfo>>,
   getServiceSocket: (serviceName: string, defaults: ISocketInfo) => Promise<ISocketInfo>,
   agentServiceRegister: (options: IRegisterConfig, withError?: boolean) => Promise<boolean>,
-  agentServiceDeregister: (serviceId: string, agentOptions?: IConsulAgentOptions, withError?: boolean) => Promise<TCommonFnResult>,
-  deregisterIfNeed: (serviceId: string, agentHost?: string, agentPort?: string) => Promise<boolean>,
-  agentMembers: (withError?: boolean) => Promise<TCommonFnResult>,
-  checkIfServiceRegistered: (serviceIdOrName: string, agentOptions?: IConsulAgentOptions) => Promise<boolean>,
+  agentServiceDeregister: (serviceId: string, apiArgs?: IAPIArgs) => Promise<boolean>,
+  deregisterIfNeed: (serviceId: string, agentOptions?: IConsulAgentOptions) => Promise<boolean>,
+  agentMembers: (apiArgs?: IAPIArgs) => Promise<TCommonFnResult>,
+  checkIfServiceRegistered: (serviceIdOrName: string, apiArgs?: IAPIArgs) => Promise<Maybe<IConsulHealthServiceInfo>>,
   registerService: (registerConfig: IRegisterConfig, registerOptions: IRegisterOptions) => Promise<TRegisterResult>,
 
-  agentOptions: IConsulAgentOptions,
-  getConsulAgentOptions: (clOptions: ICLOptions, returnCommonAgent?: boolean) => Promise<IConsulAgentOptions>,
+  agentOptions: IFullConsulAgentOptions,
+  getConsulAgentOptions: (clOptions: ICLOptions) => Promise<IFullConsulAgentOptions>,
 }
 
 export interface ICyclicStartArgs {

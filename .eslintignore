@@ -1,3 +1,7 @@
+/.run
+/_log
+/_misc
+/dist
 /node_modules
 /**/*.d.ts
 /**/*.min.js

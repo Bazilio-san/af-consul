@@ -1,6 +1,6 @@
 import { ILogObject } from 'tslog/src/interfaces';
 import { LoggerEx } from 'af-logger';
-import { TLoggerMethod } from '../src/interfaces';
+import { TLoggerMethod } from '../../src/interfaces';
 import Mock = jest.Mock;
 
 export const setProperty = (object: any, property: string, value: any) => {

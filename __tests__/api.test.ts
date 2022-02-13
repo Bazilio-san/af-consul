@@ -1,10 +1,10 @@
 /* eslint-disable no-console */
-import getConsulAPI from './get-consul-api';
-import { logger } from './logger';
+import getConsulAPI from './lib/get-consul-api';
+import { logger } from './lib/logger';
 import { IAFConsulAPI, IConsulServiceInfo, Maybe } from '../src/interfaces';
-import { ILoggerMocked, mockLogger } from './test-utils';
+import { ILoggerMocked, mockLogger } from './lib/test-utils';
 import { getFQDNCached } from '../src';
-import { serviceConfigDiff } from '../src/lib/utils';
+import { serviceConfigDiff, sleep } from '../src/lib/utils';
 import { apiCache } from '../src/get-api';
 import { MAX_API_CACHED } from '../src/constants';
 
@@ -67,6 +67,7 @@ describe('Test API', () => {
   }, TIMEOUT_MILLIS);
 
   test('getServiceInfo', async () => {
+    await sleep(3000);
     serviceInfo = await api.getServiceInfo(api.serviceId);
     expect(serviceInfo).toMatchObject(expectedServiceIfo);
   }, TIMEOUT_MILLIS);
@@ -89,7 +90,7 @@ describe('Test API', () => {
     serviceInfo = await api.getServiceInfo('dev-cepe01-foo-bar');
     expect(serviceInfo).toBe(undefined);
     expect(log.error.mock.calls.length).toBe(0); // skipCodes = [404]
-    expect(log.debug.mock.calls[0][0]).toMatch(/unknown service ID/);
+    expect(log.debug.mock.calls[0][0]).toMatch(/No info about service ID/);
   }, TIMEOUT_MILLIS);
 
   test('deregister', async () => {
@@ -101,7 +102,7 @@ describe('Test API', () => {
   }, TIMEOUT_MILLIS);
 
   test('register/deregister in another agent', async () => {
-    const agentHost = process.env.CONSUL_AGENT_HOST_2;
+    const agentHost = process.env.CONSUL_AGENT_HOST_2 || '';
     const api2 = await getConsulAPI({ agentHost });
     log.info.mockClear();
     const registerResult = await api2.register.once();
@@ -110,7 +111,7 @@ describe('Test API', () => {
     expect(log.info.mock.calls[0][0]).toMatch(/Service.+ registered in Consul/);
 
     log.info.mockClear();
-    const deregisterResult = await api.deregisterIfNeed(serviceId, agentHost, '8500');
+    const deregisterResult = await api.deregisterIfNeed(serviceId, { host: agentHost, port: '8500' });
     expect(deregisterResult).toBe(true);
     expect(log.info.mock.calls.length).toBeGreaterThan(0);
     expect(log.info.mock.calls[0][0]).toMatch(/Previous registration of service.+removed from consul/);

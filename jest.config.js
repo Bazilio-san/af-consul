@@ -19,6 +19,7 @@ module.exports = {
     '/.idea/',
   ],
   globals: { 'ts-jest': { tsconfig: 'tsconfig.json' } },
-  testSequencer: '<rootDir>/__tests__/test-sequencer.js',
-  globalSetup: '<rootDir>/__tests__/global-setup.js',
+  testSequencer: '<rootDir>/__tests__/__setup__/test-sequencer.js',
+  globalSetup: '<rootDir>/__tests__/__setup__/global-setup.js',
+  globalTeardown: '<rootDir>/__tests__/__setup__/global-teardown.js',
 };

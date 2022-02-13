@@ -4,7 +4,13 @@
 import { cyan, green, magenta, red, reset } from '../lib/color';
 import loggerStub from '../lib/logger-stub';
 import { getConsulApiCached } from '../index';
-import { IAccessPoint, IAccessPoints, ICLOptions, IConsulAPI } from '../interfaces';
+import {
+  IAccessPoint,
+  IAccessPoints,
+  ICLOptions,
+  IConsulAPI,
+  IConsulHealthServiceInfo,
+} from '../interfaces';
 import { sleep } from '../lib/utils';
 import { DEBUG } from '../constants';
 
@@ -25,7 +31,8 @@ function retrieveProps(accessPoint: IAccessPoint, host: string, meta: any) {
   return { host, port };
 }
 
-let oneUpdateCache = {}; // Служит для исключения повторного опроса consulID в пределах одного цикла updateAccessPoints
+// Служит для исключения повторного опроса consulID в пределах одного цикла updateAccessPoints
+let oneUpdateCache: {[consulServiceName: string] : IConsulHealthServiceInfo[]} = {};
 
 export async function updateAccessPoint(clOptions: ICLOptions, accessPoint: IAccessPoint): Promise<-2 | -1 | 0 | 1> {
   if (!accessPoint.updateIntervalIfSuccessMillis) {
@@ -45,13 +52,13 @@ export async function updateAccessPoint(clOptions: ICLOptions, accessPoint: IAcc
     // Точка доступа еще опрошена в этом цикле и есть сведения по ней. В этом просе будут взяты другие метаданные, нежели в предыдущем updateAccessPoint
   } else {
     // Точка доступа еще не опрошена в этом цикле
-    const consulApi: IConsulAPI = await getConsulApiCached(clOptions); // returnCommonAgent = false
+    const consulApi: IConsulAPI = await getConsulApiCached(clOptions);
     if (!consulApi) {
       clOptions.logger?.warn(`${PREFIX}: Failed to get consul API`);
       return -2;
     }
     debug(`${reset}Polling ${CONSUL_ID}`);
-    result = await consulApi.consulHealthService({ service: consulServiceName, passing: true });
+    result = await consulApi.consulHealthService({ options: { service: consulServiceName, passing: true } });
     oneUpdateCache[consulServiceName] = result;
   }
 

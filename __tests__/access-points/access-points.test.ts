@@ -1,41 +1,10 @@
-import { AccessPoints } from '../src';
-import { logger } from './logger';
-import { setProperty } from './test-utils';
-import { IAccessPoint } from '../src/interfaces';
+import { AccessPoints } from '../../src';
+import { logger } from '../lib/logger';
+import { setProperty } from '../lib/test-utils';
+import { IAccessPoint } from '../../src/interfaces';
 
-const config = {
-  accessPoints: {
-    wso2siAPI: {
-      title: 'WSO2 SI API',
-      consulServiceName: 'dev-cepe01-wso2si-d2',
-      host: null,
-      port: 9443,
-      protocol: 'https',
-      user: 'admin',
-      pass: 'admin',
-    },
-    wso2siParams: {
-      title: 'WSO2 SI Params',
-      consulServiceName: 'dev-cepe01-wso2si-d2',
-      host: null,
-      port: 9901,
-    },
-    wso2toolingAPI: {
-      title: 'WSO2 Tooling API',
-      consulServiceName: 'dev-cepe01-wso2tooling-d2',
-      host: null,
-      port: 9390,
-      user: 'admin',
-      pass: 'admin',
-    },
-    wso2toolingParams: {
-      title: 'WSO2 Tooling Params',
-      consulServiceName: 'dev-cepe01-wso2tooling-d2',
-      host: null,
-      port: 9902,
-    },
-  },
-};
+const accessPointsExpected = require('./access-points-expected.json');
+const config = require('../config');
 
 const cfg = { accessPoints: new AccessPoints(config.accessPoints) };
 
@@ -53,43 +22,8 @@ setProperty(cfg.accessPoints[_logger_], 'info', mockLoggerInfo);
 
 describe('Access Points test', () => {
   test('Checking the initial state of all AP', () => {
-    const expected = {
-      wso2siAPI: {
-        id: 'wso2siAPI',
-        title: 'WSO2 SI API',
-        consulServiceName: 'dev-cepe01-wso2si-d2',
-        host: null,
-        port: 9443,
-        protocol: 'https',
-        user: 'admin',
-        pass: 'admin',
-      },
-      wso2siParams: {
-        id: 'wso2siParams',
-        title: 'WSO2 SI Params',
-        consulServiceName: 'dev-cepe01-wso2si-d2',
-        host: null,
-        port: 9901,
-      },
-      wso2toolingAPI: {
-        id: 'wso2toolingAPI',
-        title: 'WSO2 Tooling API',
-        consulServiceName: 'dev-cepe01-wso2tooling-d2',
-        host: null,
-        port: 9390,
-        user: 'admin',
-        pass: 'admin',
-      },
-      wso2toolingParams: {
-        id: 'wso2toolingParams',
-        title: 'WSO2 Tooling Params',
-        consulServiceName: 'dev-cepe01-wso2tooling-d2',
-        host: null,
-        port: 9902,
-      },
-    };
     const result = cfg.accessPoints.get();
-    expect(result).toMatchObject(expected);
+    expect(result).toMatchObject(accessPointsExpected);
   });
 
   test('Getting information about a specific AP', () => {

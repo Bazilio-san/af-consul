@@ -1,21 +1,22 @@
 /* eslint-disable no-console */
 // noinspection UnnecessaryLocalVariableJS,JSUnusedGlobalSymbols
 
-import * as _ from 'lodash';
 import * as Consul from 'consul';
 import { Mutex } from 'async-mutex';
-// @ts-ignore
-import * as consulUtils from 'consul/lib/utils.js';
+
 import { blue, cyan, magenta, reset, yellow } from './lib/color';
 import getCurl from './lib/curl-text';
 import getHttpRequestText from './lib/http-request-text';
 import {
+  IAPIArgs,
   ICache,
   ICLOptions,
   IConsul,
   IConsulAgentOptions,
   IConsulAPI,
+  IConsulHealthServiceInfo,
   IConsulServiceInfo,
+  IFullConsulAgentOptions,
   ILogger,
   IRegisterConfig,
   IRegisterOptions,
@@ -38,77 +39,111 @@ const debug = (msg: string) => {
   }
 };
 
-const getConsulAgentOptions = async (clOptions: ICLOptions, returnCommonAgent?: boolean): Promise<IConsulAgentOptions> => {
-  const { config } = clOptions;
-  let agent = { ..._.pick(config.consul.agent, ['host', 'port', 'secure', 'token']) };
-  if (returnCommonAgent) {
-    agent = { ...agent, ...(config.consul.agent.common || {}) };
-  }
-  const { host, port, secure, token } = agent;
-  const host_ = host || (await getFQDNCached()) || process.env.HOST_HOSTNAME || config.consul.service?.host || '127.0.0.1';
-  return {
-    host: host_,
-    port: String(port || 8500),
-    secure: parseBoolean(secure),
-    defaults: token ? { token } : undefined,
+const agentTypeS = Symbol.for('agentType');
+
+const getConsulAgentOptions = async (clOptions: ICLOptions): Promise<IFullConsulAgentOptions> => {
+  const { agent, service } = clOptions.config.consul;
+
+  // const regAgent = { ..._.pick(reg, ['host', 'port', 'secure', 'token']) };
+  const secure_ = parseBoolean(agent.reg.secure);
+  const result: IFullConsulAgentOptions = {} as IFullConsulAgentOptions;
+  const reg = {
+    host: agent.reg.host || (await getFQDNCached()) || process.env.HOST_HOSTNAME || service?.host || '127.0.0.1',
+    port: String(agent.reg.port || (secure_ ? 433 : 8500)),
+    secure: secure_,
+    defaults: agent.reg.token ? { token: agent.reg.token } : undefined,
   };
+  result.reg = reg;
+
+  ['dev', 'prd'].forEach((id) => {
+    if (agent[id]) {
+      const { host, port, secure, token, dc } = agent[id];
+      result[id] = {
+        host: String(host || reg.host),
+        port: String(port || reg.port),
+        secure: parseBoolean(secure == null ? reg.secure : secure),
+        defaults: token ? { token } : reg.defaults,
+        dc,
+      };
+    } else {
+      result[id] = { ...reg };
+    }
+  });
+  ['reg', 'dev', 'prd'].forEach((id) => {
+    if (!Number(result[id].port)) {
+      throw new Error(`The port for consul agent[${id}] is invalid: [${result[id].port}]`);
+    }
+    result[id][agentTypeS] = id;
+  });
+  return result;
 };
 
 let requestCounter = 0;
 
-export const prepareConsulAPI = async (clOptions: ICLOptions, returnCommonAgent?: boolean): Promise<IConsulAPI> => {
+export const prepareConsulAPI = async (clOptions: ICLOptions): Promise<IConsulAPI> => {
   let logger = (clOptions.logger || loggerStub) as ILogger;
   if (!logger?.info) {
     logger = loggerStub;
   }
-  const consulAgentOptions: IConsulAgentOptions = await getConsulAgentOptions(clOptions, returnCommonAgent);
+  const fullConsulAgentOptions: IFullConsulAgentOptions = await getConsulAgentOptions(clOptions);
   if (dbg.on) {
-    debug(`CONSUL AGENT OPTIONS:\n${JSON.stringify(consulAgentOptions, undefined, 2)}`);
+    debug(`CONSUL AGENT OPTIONS:\n${JSON.stringify(fullConsulAgentOptions, undefined, 2)}`);
   }
-  const numericPort = Number(consulAgentOptions.port);
-  if (!numericPort) {
-    throw new Error(`The port for consul agent is invalid: [${consulAgentOptions.port}]`);
-  }
-  consulAgentOptions.port = String(numericPort);
-  const consulInstance: IConsul = Consul(consulAgentOptions) as IConsul; // { host, port, secure, defaults: { token } }
 
-  consulInstance._ext('onRequest', (request, next) => {
-    request._id_ = ++requestCounter;
-    if (dbg.on) {
-      const msg = dbg.curl ? getCurl(request, true) : getHttpRequestText(request, !!consulAgentOptions.secure);
-      debug(`[${request._id_}] ${yellow}${msg}${reset}`);
-    }
-    next();
-  });
+  const consulInstances = {} as { reg: IConsul, dev: IConsul, prd: IConsul };
+  ['reg', 'dev', 'prd'].forEach((id) => {
+    const consulAgentOptions = fullConsulAgentOptions[id];
+    const consulInstance: IConsul = Consul(consulAgentOptions) as IConsul; // { host, port, secure, defaults: { token } }
+    consulInstance[agentTypeS] = id;
 
-  consulInstance._ext('onResponse', (request, next) => {
-    const rqId = `[${request._id_}] `;
-    try {
-      const { res } = request || {};
-      const { statusCode = 0, body = null } = res || {};
-      debug(`${rqId}HTTP Status: ${statusCode}`);
-      if (statusCode > 299 && !request.opts?.skipCodes?.includes?.(statusCode)) {
-        const serviceName = request._args?.[0]?.name ?? '';
-        if (body) {
-          logger.error(`${rqId}[${serviceName ? `consul.${serviceName}` : 'CONSUL'}] ERROR: ${JSON.stringify(body)}`);
-        } else {
-          debug(`${rqId}res.body not found! res: ${res}`);
-        }
+    consulInstances[id] = consulInstance;
+
+    consulInstance._ext('onRequest', (request, next) => {
+      request._id_ = ++requestCounter;
+      if (dbg.on) {
+        const msg = dbg.curl ? getCurl(request, true) : getHttpRequestText(request);
+        debug(`[${request._id_}] ${yellow}${msg}${reset}`);
       }
-    } catch (err: Error | any) {
-      logger.error(`ERROR (onResponse ${rqId}): \n  err.message: ${err.message}\n  err.stack:\n${err.stack}\n`);
-    }
-    next();
+      next();
+    });
+
+    consulInstance._ext('onResponse', (request, next) => {
+      const rqId = `[${request._id_}] `;
+      try {
+        const { res } = request || {};
+        const { statusCode = 0, body = null } = res || {};
+        debug(`${rqId}HTTP Status: ${statusCode}`);
+        if (statusCode > 299 && !request.opts?.skipCodes?.includes?.(statusCode)) {
+          const serviceName = request._args?.[0]?.name ?? '';
+          if (body) {
+            logger.error(`${rqId}[${serviceName ? `consul.${serviceName}` : 'CONSUL'}] ERROR: ${JSON.stringify(body)}`);
+          } else {
+            debug(`${rqId}res.body not found! res: ${res}`);
+          }
+        }
+      } catch (err: Error | any) {
+        logger.error(`ERROR (onResponse ${rqId}): \n  err.message: ${err.message}\n  err.stack:\n${err.stack}\n`);
+      }
+      next();
+    });
   });
+
+  const getAgentTypeByServiceID = (serviceId: string): string => {
+    const agentType = serviceId.substring(0, 3);
+    return /(dev|prd)/.test(agentType) ? agentType : 'reg';
+  };
+  const getAgentOptionsByServiceID = (serviceId: string): IConsulAgentOptions => fullConsulAgentOptions[getAgentTypeByServiceID(serviceId)];
+  const getConsulInstanceByServiceID = (serviceId: string): IConsul => consulInstances[getAgentTypeByServiceID(serviceId)];
 
   // @ts-ignore request.res.body request.res.statusCode
 
   function common(fnName: string, {
+    consulInstance,
     agentOptions,
     options,
     withError,
     result,
-  }: { agentOptions?: IConsulAgentOptions, options?: any; withError?: boolean; result?: any }): any {
+  }: IAPIArgs): any {
     return new Promise((resolve, reject) => {
       const callback = (err: Error | any, res: any) => {
         if (err) {
@@ -117,7 +152,16 @@ export const prepareConsulAPI = async (clOptions: ICLOptions, returnCommonAgent?
         }
         resolve(result || res);
       };
-      let fn = agentOptions ? Consul(agentOptions) : consulInstance;
+
+      let fn: IConsul;
+      if (consulInstance) {
+        fn = consulInstance;
+      } else if (agentOptions) {
+        fn = Consul(agentOptions) as IConsul;
+      } else {
+        fn = consulInstances.reg;
+      }
+
       const namesArr = fnName.split('.');
       const method: string = namesArr.pop() as string;
       namesArr.forEach((v) => {
@@ -135,75 +179,74 @@ export const prepareConsulAPI = async (clOptions: ICLOptions, returnCommonAgent?
 
   const api = {
     // Returns the services the agent is managing.  - список сервисов на этом агенте
-    async agentServiceList(agentOptions?: IConsulAgentOptions, withError: boolean = false) {
-      return common('agent.service.list', { agentOptions, withError });
+    async agentServiceList(apiArgs: IAPIArgs = {}) {
+      // ### GET http://<*.host>:<*.port>/v1/agent/services
+      if (!apiArgs.consulInstance && !apiArgs.agentOptions) {
+        apiArgs.consulInstance = consulInstances.reg;
+      }
+      return common('agent.service.list', apiArgs);
+    },
+
+    // Lists services in a given datacenter
+    async catalogServiceList(dc: string, apiArgs: IAPIArgs = {}): Promise<{ [serviceId: string]: string[] }> {
+      // ### GET https://<context.host>:<context.port>/v1/catalog/services?dc=<dc>
+      if (!apiArgs.consulInstance && !apiArgs.agentOptions) {
+        const agentType = (Object.entries(fullConsulAgentOptions).find(([, v]) => v.dc === dc) || ['dev'])[0];
+        apiArgs.consulInstance = consulInstances[agentType];
+      }
+      apiArgs.options = dc;
+      return common('catalog.service.list', apiArgs);
     },
 
     // Returns the nodes and health info of a service
-    async consulHealthService(options: Consul.Health.ServiceOptions, withError: boolean = false) {
-      return common('health.service', {
-        options,
-        withError,
-      });
+    async consulHealthService(apiArgs: IAPIArgs): Promise<IConsulHealthServiceInfo[]> {
+      // ### GET https://<context.host>:<context.port>/v1/health/service/<apiArgs.options.serviceId>?passing=true&dc=<apiArgs.options.dc || context.dc>
+      const { service: serviceId, dc } = apiArgs.options;
+      if (!dc) {
+        const agentOptions = getAgentOptionsByServiceID(serviceId);
+        apiArgs.options.dc = agentOptions.dc || undefined;
+      }
+      if (!apiArgs.consulInstance && !apiArgs.agentOptions) {
+        apiArgs.consulInstance = getConsulInstanceByServiceID(serviceId);
+      }
+      return common('health.service', apiArgs);
     },
 
-    // eslint-disable-next-line no-undef
-    async getServiceInfo(serviceName: string, withError: boolean = false): Promise<Maybe<IConsulServiceInfo>> {
-      const fnName = 'agent.service.info';
-      return new Promise((resolve, reject) => {
-        let opts = { id: serviceName };
-        opts = consulUtils.defaults(opts, consulInstance._defaults);
-        const req = {
-          name: 'agent.service.info',
-          path: '/agent/service/{id}',
-          params: { id: serviceName },
-          skipCodes: [404],
-        };
-        consulUtils.options(req, opts);
-        consulInstance._get(req, consulUtils.body, (err: Error | any, res: any) => {
-          if (err) {
-            if (err.statusCode === 404 && err.message.startsWith('unknown service ID')) {
-              logger.debug(`[consul.${fnName}] ${err.message}`);
-            } else {
-              logger.error(`[consul.${fnName}] ERROR:\n  err.message: ${err.message}\n  err.stack:\n${err.stack}\n`);
-            }
-            return withError ? reject(err) : resolve(undefined);
-          }
-          resolve(res);
-        });
-      });
+    async getServiceInfo(serviceName: string): Promise<Maybe<IConsulServiceInfo>> {
+      // ### GET https://<context.host>:<context.port>/v1/health/service/<apiArgs.options.serviceId>?passing=true&dc=<apiArgs.options.dc || context.dc>
+      const result = await this.consulHealthService({ options: { service: serviceName, passing: true } });
+      logger.debug(`No info about service ID ${serviceName}`);
+      return result?.[0]?.Service;
     },
 
     async getServiceSocket(serviceName: string, defaults: ISocketInfo): Promise<ISocketInfo> {
       if (process.env.USE_DEFAULT_SERVICE_SOCKET) {
         return defaults;
       }
-      const result = await this.consulHealthService({
-        service: serviceName,
-        passing: true,
+      // В функции consulHealthService используется агент dev/prd в зависимости от префикаса
+      const result: IConsulHealthServiceInfo[] = await this.consulHealthService({
+        options: {
+          service: serviceName,
+          passing: true,
+        },
       });
       if (!result || !result.length) {
         logger.warn(`CONSUL: No working service found: ${cyan}${serviceName}${reset}. Return defaults ${defaults.host}:${defaults.port}`);
         return defaults;
       }
-      const [{
-        Node: { Node },
-        Service: {
-          Address,
-          Port,
-        },
-      }] = result;
-      const foundAddress = Address || Node;
 
-      const host = await getFQDNCached(foundAddress);
+      const { Address = result[0].Node?.Node, Port } = (result[0].Service || {}) as IConsulServiceInfo;
+
+      const host = await getFQDNCached(Address);
       return {
-        host: host || foundAddress,
+        host: host || Address || '',
         port: Port,
       };
     },
 
     // Registers a new service.
     async agentServiceRegister(options: IRegisterConfig, withError: boolean = false): Promise<boolean> {
+      // ### PUT http://<reg.host>:<reg.port>/v1/agent/service/register
       return common('agent.service.register', {
         options,
         withError,
@@ -212,32 +255,27 @@ export const prepareConsulAPI = async (clOptions: ICLOptions, returnCommonAgent?
     },
 
     // Deregister a service.
-    async agentServiceDeregister(serviceId: string, agentOptions?: IConsulAgentOptions, withError: boolean = false): Promise<boolean> {
-      return common('agent.service.deregister', {
-        agentOptions,
-        options: serviceId,
-        withError,
-        result: true,
-      });
+    async agentServiceDeregister(serviceId: string, apiArgs: IAPIArgs = {}): Promise<boolean> {
+      // ### PUT http://<reg.host>:<reg.port>/v1/agent/service/deregister/<serviceId>
+      apiArgs.options = serviceId;
+      apiArgs.result = true;
+      if (!apiArgs.agentOptions && !apiArgs.consulInstance) {
+        apiArgs.consulInstance = consulInstances.reg;
+      }
+      return common('agent.service.deregister', apiArgs);
     },
 
-    async deregisterIfNeed(serviceId: string, agentHost?: string, agentPort?: string): Promise<boolean> {
-      agentHost = agentHost || consulAgentOptions.host;
-      agentPort = agentPort || consulAgentOptions.port;
-      let agentOptions: Maybe<IConsulAgentOptions>;
-      if (agentHost !== consulAgentOptions.host || agentPort !== consulAgentOptions.port) {
-        const secure = String(agentPort) !== '8500';
-        agentOptions = {
-          ...consulAgentOptions, host: agentHost, port: agentPort, secure,
-        };
-      }
-
-      const isAlreadyRegistered = await this.checkIfServiceRegistered(serviceId, agentOptions);
-      if (isAlreadyRegistered) {
-        const isDeregister = await this.agentServiceDeregister(serviceId, agentOptions);
+    async deregisterIfNeed(serviceId: string, agentOptions?: IConsulAgentOptions): Promise<boolean> {
+      const apiArgs: IAPIArgs = { agentOptions };
+      const healthServiceInfo = await this.checkIfServiceRegistered(serviceId, apiArgs);
+      if (healthServiceInfo) {
+        const nodeHost = (healthServiceInfo.Node?.Node || '').toLowerCase().split('.')[0] || '';
+        const [agentType = 'reg'] = Object.entries(fullConsulAgentOptions).find(([, aOpt]) => aOpt.host.toLowerCase().startsWith(nodeHost)) || [];
+        apiArgs.consulInstance = consulInstances[agentType];
+        const isDeregister = await this.agentServiceDeregister(serviceId, apiArgs);
 
         const m = (wasnt: string = '') => `Previous registration of service '${cyan}${serviceId}${reset}'${
-          wasnt} removed from consul agent ${blue}${agentHost}${reset}`;
+          wasnt} removed from consul agent ${blue}${fullConsulAgentOptions[agentType].host}${reset}`;
         if (isDeregister) {
           logger.info(m());
         } else {
@@ -251,13 +289,20 @@ export const prepareConsulAPI = async (clOptions: ICLOptions, returnCommonAgent?
     },
 
     // Returns the members as seen by the consul agent. - список агентов (нод)
-    agentMembers: async (withError: boolean = false) => common('agent.members', { withError }),
+    agentMembers: async (apiArgs: IAPIArgs = {}) => {
+      // ### GET http://<reg.host>:<reg.port>/v1/agent/members
+      if (!apiArgs.consulInstance && !apiArgs.agentOptions) {
+        apiArgs.consulInstance = consulInstances.reg;
+      }
+      return common('agent.members', apiArgs);
+    },
 
-    async checkIfServiceRegistered(serviceIdOrName: string, agentOptions?: IConsulAgentOptions): Promise<boolean> {
-      const agentServiceListR = await this.agentServiceList(agentOptions);
-      return agentServiceListR
-        && Object.values(agentServiceListR)
-          .some(({ ID: i, Service: s }: any) => i === serviceIdOrName || s === serviceIdOrName);
+    async checkIfServiceRegistered(serviceIdOrName: string, apiArgs: IAPIArgs = {}): Promise<Maybe<IConsulHealthServiceInfo>> {
+      if (!apiArgs.consulInstance && !apiArgs.agentOptions) {
+        apiArgs.consulInstance = getConsulInstanceByServiceID(serviceIdOrName);
+      }
+      const result = await this.consulHealthService({ options: { service: serviceIdOrName } });
+      return result?.[0];
     },
 
     async registerService(registerConfig: IRegisterConfig, registerOptions: IRegisterOptions): Promise<TRegisterResult> {
@@ -304,7 +349,7 @@ export const prepareConsulAPI = async (clOptions: ICLOptions, returnCommonAgent?
       }
       return isJustRegistered ? 'just' : false;
     },
-    agentOptions: consulAgentOptions,
+    agentOptions: fullConsulAgentOptions,
     getConsulAgentOptions,
   };
   return api;
@@ -312,12 +357,12 @@ export const prepareConsulAPI = async (clOptions: ICLOptions, returnCommonAgent?
 
 const consulApiCache: ICache<IConsulAPI> = {};
 
-export const getConsulApiCached = async (clOptions: ICLOptions, returnCommonAgent?: boolean): Promise<IConsulAPI> => mutex
+export const getConsulApiCached = async (clOptions: ICLOptions): Promise<IConsulAPI> => mutex
   .runExclusive<IConsulAPI>(async () => {
-    const hash = getConfigHash(clOptions, returnCommonAgent);
+    const hash = getConfigHash(clOptions);
     if (!consulApiCache[hash]) {
       minimizeCache(consulApiCache, MAX_API_CACHED);
-      const value = await prepareConsulAPI(clOptions, returnCommonAgent);
+      const value = await prepareConsulAPI(clOptions);
       consulApiCache[hash] = { created: Date.now(), value };
     }
     return consulApiCache[hash].value;

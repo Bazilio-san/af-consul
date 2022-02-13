@@ -27,3 +27,4 @@ local*.*
 /.env
 **/dist
 /_log/
+/__tests__/af_tests/

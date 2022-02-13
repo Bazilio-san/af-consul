@@ -70,14 +70,13 @@ export const getRegisterConfig = async (options: ICLOptions): Promise<IRegisterC
       metaObj.af_consul_version = packageJson.version;
     }
   }
-
   const registerConfig: IRegisterConfig = {
     id: serviceId,
     name: serviceId,
     port,
     address,
     tags,
-    meta: { ...metaObj, ...meta },
+    meta: <Record<string, string>>{ ...metaObj, ...meta },
   };
   const check = { ...(config.consul?.check || {}) };
   [['name', `Service '${name}-${instance}'`], ['timeout', '5s'], ['deregistercriticalserviceafter', '3m']]
