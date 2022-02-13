@@ -26,8 +26,8 @@ const debug = (msg: string) => {
 const UPDATE_INTERVAL_IF_CONSUL_REGISTER_SUCCESS_MILLIS = Number(process.env.UPDATE_INTERVAL_IF_CONSUL_REGISTER_SUCCESS_MILLIS) || (2 * 60_000);
 
 // A stub in case such a function is not set for the access point in the configuration
-function retrieveProps(accessPoint: IAccessPoint, host: string, meta: any) {
-  const port = Number(meta.port) || accessPoint.port;
+function retrieveProps(accessPoint: IAccessPoint, host: string, meta?: any) {
+  const port = Number(meta?.port) || accessPoint.port;
   return { host, port };
 }
 
@@ -63,7 +63,7 @@ export async function updateAccessPoint(clOptions: ICLOptions, accessPoint: IAcc
   }
 
   const { Address: host, Meta: meta } = result?.[0]?.Service || {};
-  if (!host || !meta) {
+  if (!host) {
     clOptions.logger?.warn(`${red}There is no information for ${CONSUL_ID}`);
     accessPoint.lastSuccessUpdate = 0;
     const wasReachable = accessPoint.isReachable;
