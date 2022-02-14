@@ -95,7 +95,6 @@ export interface IAccessPoints {
 }
 
 export interface IConsulAgentConfig {
-  isRegisterServiceOnStart?: boolean,
   host?: string, // || FQDN || env.HOST_HOSTNAME || config.consul.service?.host || '127.0.0.1'
   port?: string, // || 8500
   secure?: string | TBooleanLike | boolean,
@@ -121,6 +120,7 @@ export interface IAFConsulConfig {
     meta?: string | IMeta,
     host?: Nullable<string>,
     port?: Nullable<string | number>
+    noRegisterOnStart?: boolean,
   },
 }
 
