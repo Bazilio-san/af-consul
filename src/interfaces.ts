@@ -120,7 +120,7 @@ export interface IAFConsulConfig {
     meta?: string | IMeta,
     host?: Nullable<string>,
     port?: Nullable<string | number>
-    noRegisterOnStart?: boolean,
+    noRegOnStart?: boolean,
   },
 }
 
