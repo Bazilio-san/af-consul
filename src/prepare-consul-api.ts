@@ -215,7 +215,7 @@ export const prepareConsulAPI = async (clOptions: ICLOptions): Promise<IConsulAP
     async getServiceInfo(serviceName: string): Promise<Maybe<IConsulServiceInfo>> {
       // ### GET https://<context.host>:<context.port>/v1/health/service/<apiArgs.options.serviceId>?passing=true&dc=<apiArgs.options.dc || context.dc>
       const result = await this.consulHealthService({ options: { service: serviceName, passing: true } });
-      logger.debug(`No info about service ID ${serviceName}`);
+      logger.debug(`No info about service ID ${cyan}${serviceName}`);
       return result?.[0]?.Service;
     },
 

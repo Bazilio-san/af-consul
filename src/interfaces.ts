@@ -128,6 +128,10 @@ export interface IAFConfig {
   accessPoints?: IAccessPoints | AccessPoints,
   consul: IAFConsulConfig,
   webServer: any,
+  service?: {
+    id?: string,
+    address?: string,
+  };
 }
 
 export type TCommonFnResult = any;
@@ -191,7 +195,9 @@ export interface IAPIArgs {
 
 export interface IConsulAPI {
   agentServiceList: (apiArgs?: IAPIArgs) => Promise<{ [serviceName: string]: IConsulServiceInfo }>,
+
   catalogServiceList(dc: string, apiArgs?: IAPIArgs): Promise<{ [serviceId: string]: string[] }>,
+
   consulHealthService: (apiArgs: IAPIArgs) => Promise<IConsulHealthServiceInfo[]>,
   getServiceInfo: (serviceName: string) => Promise<Maybe<IConsulServiceInfo>>,
   getServiceSocket: (serviceName: string, defaults: ISocketInfo) => Promise<ISocketInfo>,

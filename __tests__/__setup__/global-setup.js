@@ -1,6 +1,9 @@
 /* eslint-disable no-console */
 require('dotenv').config();
+const path = require('path');
 const http = require('http');
+
+process.env.NODE_CONFIG_DIR = path.resolve(`${__dirname}/../config/`);
 const config = require('../config');
 
 const runMiniServer = () => {

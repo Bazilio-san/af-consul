@@ -93,5 +93,11 @@ export const getRegisterConfig = async (options: ICLOptions): Promise<IRegisterC
   }
   registerConfig.check = check;
 
+  if (!config.service) {
+    config.service = {};
+  }
+  config.service.id = serviceId;
+  config.service.address = address;
+
   return registerConfig;
 };

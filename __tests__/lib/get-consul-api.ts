@@ -21,11 +21,13 @@ export default async ({ instanceSuffix, agentHost, serviceName }: {
   if (serviceName) {
     config_.consul.service.name = serviceName;
   }
-  return getAPI(
+  const api = await getAPI(
     {
       config: config_,
       logger,
       projectId: process.env.PROJECT_ID || 'proj',
     },
   );
+  config.service = config_.service;
+  return api;
 };

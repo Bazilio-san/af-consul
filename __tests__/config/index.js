@@ -1,12 +1,11 @@
-const consul = require('./consul');
+const config = require('config');
 
-const accessPoints = require('./access-points.json');
+const cfg = config; // .util.toObject();
 
-module.exports = {
-  consul,
-  accessPoints,
-  webServer: {
-    host: process.env.WS_HOST || '0.0.0.0',
-    port: process.env.WS_PORT || '10000',
-  },
-};
+const writableKeys = ['accessPoints'];
+Object.keys(cfg).forEach((key) => {
+  if (!writableKeys.includes(key) && typeof cfg[key] === 'object') {
+    config.util.makeImmutable(cfg[key]);
+  }
+});
+module.exports = config;
