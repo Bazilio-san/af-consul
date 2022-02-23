@@ -131,6 +131,7 @@ export interface IAFConfig {
   service?: {
     id?: string,
     address?: string,
+    fromService?: string,
   };
 }
 
