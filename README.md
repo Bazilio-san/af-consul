@@ -92,3 +92,25 @@ getConsulAPI().then(({ deregister }) => {
 });
 
 ```
+
+## Идентификаторы отладки
+
+    AP-UPDATER       - access-points-updater:   
+          - Polling ${CONSUL_ID}   
+          - The data is up-to-date ${CONSUL_ID}
+    
+    af-consul 		 
+        `${yellow} REGISTER CONFIG:\n${JSON.stringify(registerConfig, undefined, 2)}\n${reset}`
+        `CONSUL AGENT OPTIONS:\n${JSON.stringify(fullConsulAgentOptions, undefined, 2)}`
+        `${rqId}HTTP Status: ${statusCode}`
+        `${rqId}res.body not found! res: ${res}`
+        `No info about service ID ${cyan}${serviceName}`
+        `${prefixG} Skip registration check after health check`    
+    
+    af-consul:curl
+        const msg = dbg.curl ? getCurl(request, true) : getHttpRequestText(request);
+        `[${request._id_}] ${yellow}${msg}${reset}`
+    
+    af-consul:reg
+        `${PREFIX}: updated ${updatedCount.length} access point(s)`
+        `${prefixG} Service ${cyan}${registerConfig.id}${reset} registration check...`

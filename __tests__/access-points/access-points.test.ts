@@ -57,9 +57,7 @@ describe('Access Points test', () => {
       anyProp: true,
     };
 
-    const result1 = cfg.accessPoints.setAP('wso2siAPI', {
-      host: 'new-host', port: '456', anyProp: true, undefProp: undefined,
-    });
+    const result1 = cfg.accessPoints.setAP('wso2siAPI', { host: 'new-host', port: '456', anyProp: true, undefProp: undefined });
     expect(result1).toMatchObject(expected);
 
     const result2 = cfg.accessPoints.get('wso2siAPI');
@@ -79,9 +77,7 @@ describe('Access Points test', () => {
       p: 'eee',
     };
     const wso2siAPI = cfg.accessPoints.getAP('wso2siAPI');
-    const changedAP = wso2siAPI?.setProps?.({
-      host: 'Update-host-self', port: 45687, p: 'eee',
-    });
+    const changedAP = wso2siAPI?.setProps?.({ host: 'Update-host-self', port: 45687, p: 'eee' });
     const changes = changedAP?.getChanges?.();
     expect(changes?.length).toBe(3);
     expect(changes).toMatchObject([

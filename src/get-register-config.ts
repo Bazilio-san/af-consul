@@ -16,7 +16,8 @@ export const getRegisterConfig = async (options: ICLOptions): Promise<IRegisterC
   const { webServer } = config;
 
   // eslint-disable-next-line prefer-const
-  let { name, instance, version, description, tags, meta, host, port } = config?.consul?.service ?? {};
+  const { host } = config?.consul?.service ?? {};
+  let { name, instance, version, description, tags, meta, port } = config?.consul?.service ?? {};
   name = removeAroundQuotas(name);
   instance = removeAroundQuotas(instance);
   version = removeAroundQuotas(version);
@@ -38,9 +39,7 @@ export const getRegisterConfig = async (options: ICLOptions): Promise<IRegisterC
     throw new Error(`${PREFIX}: Address is empty!`);
   }
 
-  meta = parseMeta(meta, {
-    serviceId, name, instance, address, port,
-  });
+  meta = parseMeta(meta, { serviceId, name, instance, address, port });
   const metaObj: Record<string, string> = {
     host: address,
     port: String(port),

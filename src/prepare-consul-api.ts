@@ -137,7 +137,7 @@ export const prepareConsulAPI = async (clOptions: ICLOptions): Promise<IConsulAP
 
   // @ts-ignore request.res.body request.res.statusCode
 
-  function common(fnName: string, {
+  function common (fnName: string, {
     consulInstance,
     agentOptions,
     options,
@@ -179,7 +179,7 @@ export const prepareConsulAPI = async (clOptions: ICLOptions): Promise<IConsulAP
 
   const api = {
     // Returns the services the agent is managing.  - список сервисов на этом агенте
-    async agentServiceList(apiArgs: IAPIArgs = {}) {
+    async agentServiceList (apiArgs: IAPIArgs = {}) {
       // ### GET http://<*.host>:<*.port>/v1/agent/services
       if (!apiArgs.consulInstance && !apiArgs.agentOptions) {
         apiArgs.consulInstance = consulInstances.reg;
@@ -188,7 +188,7 @@ export const prepareConsulAPI = async (clOptions: ICLOptions): Promise<IConsulAP
     },
 
     // Lists services in a given datacenter
-    async catalogServiceList(dc: string, apiArgs: IAPIArgs = {}): Promise<{ [serviceId: string]: string[] }> {
+    async catalogServiceList (dc: string, apiArgs: IAPIArgs = {}): Promise<{ [serviceId: string]: string[] }> {
       // ### GET https://<context.host>:<context.port>/v1/catalog/services?dc=<dc>
       if (!apiArgs.consulInstance && !apiArgs.agentOptions) {
         const agentType = (Object.entries(fullConsulAgentOptions).find(([, v]) => v.dc === dc) || ['dev'])[0];
@@ -199,7 +199,7 @@ export const prepareConsulAPI = async (clOptions: ICLOptions): Promise<IConsulAP
     },
 
     // Returns the nodes and health info of a service
-    async consulHealthService(apiArgs: IAPIArgs): Promise<IConsulHealthServiceInfo[]> {
+    async consulHealthService (apiArgs: IAPIArgs): Promise<IConsulHealthServiceInfo[]> {
       // ### GET https://<context.host>:<context.port>/v1/health/service/<apiArgs.options.serviceId>?passing=true&dc=<apiArgs.options.dc || context.dc>
       const { service: serviceId, dc } = apiArgs.options;
       if (!dc) {
@@ -212,14 +212,14 @@ export const prepareConsulAPI = async (clOptions: ICLOptions): Promise<IConsulAP
       return common('health.service', apiArgs);
     },
 
-    async getServiceInfo(serviceName: string): Promise<Maybe<IConsulServiceInfo>> {
+    async getServiceInfo (serviceName: string): Promise<Maybe<IConsulServiceInfo>> {
       // ### GET https://<context.host>:<context.port>/v1/health/service/<apiArgs.options.serviceId>?passing=true&dc=<apiArgs.options.dc || context.dc>
       const result = await this.consulHealthService({ options: { service: serviceName, passing: true } });
       logger.debug(`No info about service ID ${cyan}${serviceName}`);
       return result?.[0]?.Service;
     },
 
-    async getServiceSocket(serviceName: string, defaults: ISocketInfo): Promise<ISocketInfo> {
+    async getServiceSocket (serviceName: string, defaults: ISocketInfo): Promise<ISocketInfo> {
       if (process.env.USE_DEFAULT_SERVICE_SOCKET) {
         return defaults;
       }
@@ -245,7 +245,7 @@ export const prepareConsulAPI = async (clOptions: ICLOptions): Promise<IConsulAP
     },
 
     // Registers a new service.
-    async agentServiceRegister(options: IRegisterConfig, withError: boolean = false): Promise<boolean> {
+    async agentServiceRegister (options: IRegisterConfig, withError: boolean = false): Promise<boolean> {
       // ### PUT http://<reg.host>:<reg.port>/v1/agent/service/register
       return common('agent.service.register', {
         options,
@@ -255,7 +255,7 @@ export const prepareConsulAPI = async (clOptions: ICLOptions): Promise<IConsulAP
     },
 
     // Deregister a service.
-    async agentServiceDeregister(serviceId: string, apiArgs: IAPIArgs = {}): Promise<boolean> {
+    async agentServiceDeregister (serviceId: string, apiArgs: IAPIArgs = {}): Promise<boolean> {
       // ### PUT http://<reg.host>:<reg.port>/v1/agent/service/deregister/<serviceId>
       apiArgs.options = serviceId;
       apiArgs.result = true;
@@ -265,7 +265,7 @@ export const prepareConsulAPI = async (clOptions: ICLOptions): Promise<IConsulAP
       return common('agent.service.deregister', apiArgs);
     },
 
-    async deregisterIfNeed(serviceId: string, agentOptions?: IConsulAgentOptions): Promise<boolean> {
+    async deregisterIfNeed (serviceId: string, agentOptions?: IConsulAgentOptions): Promise<boolean> {
       const apiArgs: IAPIArgs = { agentOptions };
       const healthServiceInfo = await this.checkIfServiceRegistered(serviceId, apiArgs);
       if (healthServiceInfo) {
@@ -297,7 +297,7 @@ export const prepareConsulAPI = async (clOptions: ICLOptions): Promise<IConsulAP
       return common('agent.members', apiArgs);
     },
 
-    async checkIfServiceRegistered(serviceIdOrName: string, apiArgs: IAPIArgs = {}): Promise<Maybe<IConsulHealthServiceInfo>> {
+    async checkIfServiceRegistered (serviceIdOrName: string, apiArgs: IAPIArgs = {}): Promise<Maybe<IConsulHealthServiceInfo>> {
       if (!apiArgs.consulInstance && !apiArgs.agentOptions) {
         apiArgs.consulInstance = getConsulInstanceByServiceID(serviceIdOrName);
       }
@@ -305,7 +305,7 @@ export const prepareConsulAPI = async (clOptions: ICLOptions): Promise<IConsulAP
       return result?.[0];
     },
 
-    async registerService(registerConfig: IRegisterConfig, registerOptions: IRegisterOptions): Promise<TRegisterResult> {
+    async registerService (registerConfig: IRegisterConfig, registerOptions: IRegisterOptions): Promise<TRegisterResult> {
       const serviceId = registerConfig.id || registerConfig.name;
       const srv = `Service '${cyan}${serviceId}${reset}'`;
 

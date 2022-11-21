@@ -1,7 +1,7 @@
 class ToCurl {
   private readonly request: any;
 
-  constructor(req: any, isPapi?: boolean) {
+  constructor (req: any, isPapi?: boolean) {
     if (isPapi) {
       const { hostname, port, path, method, headers } = req.req;
       let data;
@@ -24,7 +24,7 @@ class ToCurl {
     }
   }
 
-  getHeaders() {
+  getHeaders () {
     let { headers } = this.request;
     let curlHeaders = '';
 
@@ -51,11 +51,11 @@ class ToCurl {
     return curlHeaders.trim();
   }
 
-  getMethod() {
+  getMethod () {
     return `-X ${this.request.method.toUpperCase()}`;
   }
 
-  getBody() {
+  getBody () {
     const r = this.request;
     const { data } = r;
     if (
@@ -72,7 +72,7 @@ class ToCurl {
     return '';
   }
 
-  getUrl() {
+  getUrl () {
     if (this.request.baseURL) {
       const baseUrl = this.request.baseURL;
       const { url } = this.request;
@@ -85,7 +85,7 @@ class ToCurl {
     return this.request.url;
   }
 
-  getQueryString() {
+  getQueryString () {
     if (this.request.paramsSerializer) {
       const params = this.request.paramsSerializer(this.request.params);
       if (params?.length) {
@@ -98,11 +98,11 @@ class ToCurl {
       .reduce((qs, param) => `${qs}${qs ? '&' : '?'}${param}=${this.request.params[param]}`, '');
   }
 
-  getBuiltURL() {
+  getBuiltURL () {
     return (this.getUrl() + this.getQueryString()).trim();
   }
 
-  getCURL() {
+  getCURL () {
     return `curl -i ${this.getMethod()} "${this.getBuiltURL()}" ${this.getHeaders()} ${this.getBody()}`;
   }
 }

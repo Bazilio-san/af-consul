@@ -1,20 +1,21 @@
 module.exports = {
+  root: true,
+  extends: [
+    'eslint-config-af-22',
+  ],
   env: {
     browser: true,
     commonjs: true,
     es2021: true,
     jest: true,
   },
-  extends: [
-    'airbnb-base',
-  ],
-  root: true,
+  globals: {},
   parser: '@typescript-eslint/parser',
-  plugins: ['prefer-arrow', 'import', '@typescript-eslint'],
   parserOptions: {
     sourceType: 'module',
     // ecmaVersion: 13,
   },
+  plugins: ['prefer-arrow', 'import', '@typescript-eslint'],
   ignorePatterns: ['node_modules/', '**/*.json', '**/dist/**/*.*'],
   rules: {
     '@typescript-eslint/no-unused-vars': 'warn',
@@ -31,10 +32,10 @@ module.exports = {
     'object-curly-newline': [
       'error',
       {
-        ObjectExpression: { multiline: true, minProperties: 3 },
-        ObjectPattern: { multiline: true },
-        ImportDeclaration: { multiline: true },
-        ExportDeclaration: { multiline: true, minProperties: 3 },
+        ObjectExpression: { multiline: true, minProperties: 8 },
+        ObjectPattern: { multiline: true, minProperties: 8 },
+        ImportDeclaration: { multiline: true, minProperties: 8 },
+        ExportDeclaration: { multiline: true, minProperties: 8 },
       },
     ],
   },

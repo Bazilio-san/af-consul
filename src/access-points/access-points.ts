@@ -25,7 +25,7 @@ const addAdditionalAPProps = (accessPoint: Record<string, any>) => {
 export class AccessPoints {
   private readonly [_logger_]: ILogger;
 
-  constructor(accessPoints: IAccessPoints, logger?: ILogger) {
+  constructor (accessPoints: IAccessPoints, logger?: ILogger) {
     this[_logger_] = logger || loggerStub;
     if (!accessPoints) {
       const msg = 'Empty argument "accessPoints" passed to constructor';
@@ -37,18 +37,18 @@ export class AccessPoints {
     });
   }
 
-  static normalizePort(port: unknown) {
+  static normalizePort (port: unknown) {
     return Number(port) || null;
   }
 
-  static normalizeProtocol(protocol: string | null) {
+  static normalizeProtocol (protocol: string | null) {
     if (!protocol || !/^https?$/i.test(protocol)) {
       protocol = 'http';
     }
     return protocol?.toLowerCase();
   }
 
-  static normalizeValue(propName: string, propValue: any) {
+  static normalizeValue (propName: string, propValue: any) {
     switch (propName) {
       case 'port':
         return AccessPoints.normalizePort(propValue);
@@ -59,7 +59,7 @@ export class AccessPoints {
     }
   }
 
-  static getPureProps(accessPointSource: Record<string, any>): IAccessPoint {
+  static getPureProps (accessPointSource: Record<string, any>): IAccessPoint {
     const accessPoint = Object.create(null);
     Object.entries(accessPointSource).forEach(([propName, propValue]) => {
       if (propValue === undefined || typeof propValue === 'function') {
@@ -74,7 +74,7 @@ export class AccessPoints {
     return accessPoint;
   }
 
-  addAP(apKey: string, apData: any): Maybe<IAccessPoint> {
+  addAP (apKey: string, apData: any): Maybe<IAccessPoint> {
     if (!apData || !isObject(apData)) {
       return undefined;
     }
@@ -96,7 +96,7 @@ export class AccessPoints {
     return AccessPoints.getPureProps(accessPoint);
   }
 
-  setAP(apKey: string, apData: Record<string, any> | null): Maybe<IAccessPoint> {
+  setAP (apKey: string, apData: Record<string, any> | null): Maybe<IAccessPoint> {
     if (!apData) {
       return undefined;
     }
@@ -142,7 +142,7 @@ export class AccessPoints {
     return result;
   }
 
-  getAP(accessPointKey: string): Maybe<IAccessPoint> {
+  getAP (accessPointKey: string): Maybe<IAccessPoint> {
     if (accessPointKey) {
       const accessPoint = this[accessPointKey];
       if (!accessPoint?.isAP) {
@@ -157,7 +157,7 @@ export class AccessPoints {
    * Если передан accessPointKey, то возвращается этот AP, если есть.
    * Если accessPointKey НЕ передан, то возвращаются ВСЕ AP
    */
-  get(accessPointKey?: string) {
+  get (accessPointKey?: string) {
     if (accessPointKey) {
       const accessPoint = this[accessPointKey];
       if (!accessPoint?.isAP) {

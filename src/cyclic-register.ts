@@ -1,15 +1,23 @@
+/* eslint-disable no-console */
 // noinspection JSUnusedGlobalSymbols
 
 import loggerStub from './lib/logger-stub';
 import { ICLOptions, IConsulAPI, ICyclicStartArgs, IRegisterConfig, IRegisterCyclic } from './interfaces';
-import { cyan, green, reset } from './lib/color';
+import { cyan, green, magenta, reset } from './lib/color';
 import { toMills } from './lib/utils';
-import { FORCE_EVERY_REGISTER_ATTEMPT } from './constants';
+import { CONSUL_DEBUG_ON, DEBUG, FORCE_EVERY_REGISTER_ATTEMPT, PREFIX } from './constants';
 
 const prefix = 'CONSUL-REG:';
 const prefixG = `${green}${prefix}${reset}`;
 
 const DEFAULT_INTERVAL = 60_000;
+
+const isDebugReg = CONSUL_DEBUG_ON && /\baf-consul:reg\b/i.test(DEBUG);
+const debug = (msg: string) => {
+  if (isDebugReg) {
+    console.log(`${magenta}${PREFIX}${reset}: ${msg}`);
+  }
+};
 
 export const getRegisterCyclic = (
   opts: ICLOptions,
@@ -24,7 +32,7 @@ export const getRegisterCyclic = (
   _timerId: setTimeout(() => null, 0),
   _logger: loggerStub,
 
-  async start(cyclicStartArgs?: ICyclicStartArgs): Promise<-1 | 0 | 1> {
+  async start (cyclicStartArgs?: ICyclicStartArgs): Promise<-1 | 0 | 1> {
     const {
       cLOptions,
       registerInterval,
@@ -53,7 +61,7 @@ export const getRegisterCyclic = (
       if (FORCE_EVERY_REGISTER_ATTEMPT || this.skipNextRegisterAttemptUntil < Date.now()) {
         try {
           if (this.isStarted) {
-            this._logger.silly(`${prefixG} Service ${cyan}${registerConfig.id}${reset} registration check...`);
+            debug(`${prefixG} Service ${cyan}${registerConfig.id}${reset} registration check...`);
           }
           await consulApi.registerService(registerConfig, {
             registerType: (FORCE_EVERY_REGISTER_ATTEMPT || !this.isStarted) ? 'force' : (registerType || 'if-not-registered'),
@@ -66,7 +74,7 @@ export const getRegisterCyclic = (
         }
         this.skipNextRegisterAttemptUntil = 0;
       } else {
-        this._logger.silly(`${prefixG} Skip registration check after health check`);
+        debug(`${prefixG} Skip registration check after health check`);
       }
       clearTimeout(this._timerId);
       this._timerId = setTimeout(doLoop, this.registerIntervalMillis);
@@ -78,7 +86,7 @@ export const getRegisterCyclic = (
       cyan}${host}:${port}${reset}, token: ${cyan}${defaults?.token?.substring(0, 4)}***${reset}`);
     return 1;
   },
-  stop() {
+  stop () {
     clearTimeout(this._timerId);
     this.isStarted = false;
     this._logger.info(`Cyclic Register of service ${cyan}${registerConfig.id}${reset} stopped`);

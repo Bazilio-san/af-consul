@@ -26,15 +26,15 @@ const debug = (msg: string) => {
 const UPDATE_INTERVAL_IF_CONSUL_REGISTER_SUCCESS_MILLIS = Number(process.env.UPDATE_INTERVAL_IF_CONSUL_REGISTER_SUCCESS_MILLIS) || (2 * 60_000);
 
 // A stub in case such a function is not set for the access point in the configuration
-function retrieveProps(accessPoint: IAccessPoint, host: string, meta?: any) {
+function retrieveProps (accessPoint: IAccessPoint, host: string, meta?: any) {
   const port = Number(meta?.port) || accessPoint.port;
   return { host, port };
 }
 
 // Служит для исключения повторного опроса consulID в пределах одного цикла updateAccessPoints
-let oneUpdateCache: {[consulServiceName: string] : IConsulHealthServiceInfo[]} = {};
+let oneUpdateCache: { [consulServiceName: string]: IConsulHealthServiceInfo[] } = {};
 
-export async function updateAccessPoint(clOptions: ICLOptions, accessPoint: IAccessPoint): Promise<-2 | -1 | 0 | 1> {
+export async function updateAccessPoint (clOptions: ICLOptions, accessPoint: IAccessPoint): Promise<-2 | -1 | 0 | 1> {
   if (!accessPoint.updateIntervalIfSuccessMillis) {
     accessPoint.updateIntervalIfSuccessMillis = UPDATE_INTERVAL_IF_CONSUL_REGISTER_SUCCESS_MILLIS;
   }
@@ -92,7 +92,7 @@ export async function updateAccessPoint(clOptions: ICLOptions, accessPoint: IAcc
   return 1;
 }
 
-export async function updateAccessPoints(clOptions: ICLOptions): Promise<boolean> {
+export async function updateAccessPoints (clOptions: ICLOptions): Promise<boolean> {
   const accessPoints = Object.values(<IAccessPoints>clOptions.config.accessPoints).filter((ap: any) => ap?.isAP);
   const result = [];
   for (let i = 0; i < accessPoints.length; i++) {
@@ -114,7 +114,7 @@ export const accessPointsUpdater = {
   isAnyUpdated: false,
   _timerId: setTimeout(() => null, 0),
   _logger: loggerStub,
-  start(clOptions: ICLOptions, updateInterval: number = 10_000): number {
+  start (clOptions: ICLOptions, updateInterval: number = 10_000): number {
     if (this.isStarted) {
       return 0;
     }
@@ -137,7 +137,7 @@ export const accessPointsUpdater = {
     this._logger.info('Access point updater started');
     return 1;
   },
-  async waitForAnyUpdated(timeout: number = 10_000): Promise<boolean> {
+  async waitForAnyUpdated (timeout: number = 10_000): Promise<boolean> {
     const start = Date.now();
     while (!this.isAnyUpdated && (Date.now() - start < timeout)) {
       // eslint-disable-next-line no-await-in-loop
@@ -145,7 +145,7 @@ export const accessPointsUpdater = {
     }
     return this.isAnyUpdated;
   },
-  stop() {
+  stop () {
     clearTimeout(this._timerId);
     this.isStarted = false;
     this._logger.info('Access point updater stopped');
