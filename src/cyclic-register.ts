@@ -5,14 +5,14 @@ import loggerStub from './lib/logger-stub';
 import { ICLOptions, IConsulAPI, ICyclicStartArgs, IRegisterConfig, IRegisterCyclic } from './interfaces';
 import { cyan, green, magenta, reset } from './lib/color';
 import { toMills } from './lib/utils';
-import { CONSUL_DEBUG_ON, DEBUG, FORCE_EVERY_REGISTER_ATTEMPT, PREFIX } from './constants';
+import { DEBUG, FORCE_EVERY_REGISTER_ATTEMPT, PREFIX } from './constants';
 
 const prefix = 'CONSUL-REG:';
 const prefixG = `${green}${prefix}${reset}`;
 
 const DEFAULT_INTERVAL = 60_000;
 
-const isDebugReg = CONSUL_DEBUG_ON && /\baf-consul:reg\b/i.test(DEBUG);
+const isDebugReg = /\baf-consul:(reg|\*)/i.test(DEBUG) || /\baf-consul:\*/i.test(DEBUG);
 const debug = (msg: string) => {
   if (isDebugReg) {
     console.log(`${magenta}${PREFIX}${reset}: ${msg}`);
