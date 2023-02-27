@@ -9,6 +9,9 @@ const PREFIX = 'ACCESS-POINT';
 const _logger_ = Symbol.for('_logger_');
 
 const addAdditionalAPProps = (accessPoint: Record<string, any>) => {
+  if (accessPoint.noConsul) {
+    return;
+  }
   Object.defineProperty(accessPoint, 'isAP', { value: true });
   Object.defineProperty(accessPoint, 'lastSuccessUpdate', { value: 0, writable: true });
   Object.defineProperty(accessPoint, 'idHostPortUpdated', { value: false, writable: true });
@@ -76,6 +79,9 @@ export class AccessPoints {
 
   addAP (apKey: string, apData: any): Maybe<IAccessPoint> {
     if (!apData || !isObject(apData)) {
+      return undefined;
+    }
+    if (apData.noConsul) {
       return undefined;
     }
     if (!apData.consulServiceName) {
