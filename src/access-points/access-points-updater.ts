@@ -93,7 +93,7 @@ export async function updateAccessPoint (clOptions: ICLOptions, accessPoint: IAc
 }
 
 export async function updateAccessPoints (clOptions: ICLOptions): Promise<boolean> {
-  const accessPoints = Object.values(<IAccessPoints>clOptions.config.accessPoints).filter((ap: any) => ap?.isAP);
+  const accessPoints = Object.values(<IAccessPoints>clOptions.config.accessPoints).filter((ap: any) => ap?.isAP && !ap.noConsul);
   const result = [];
   for (let i = 0; i < accessPoints.length; i++) {
     const accessPoint: IAccessPoint = accessPoints[i];

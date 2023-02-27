@@ -86,6 +86,7 @@ export interface IAccessPoint {
   idHostPortUpdated?: boolean,
   getChanges?: () => [string, any, any][] | undefined,
   updateIntervalIfSuccessMillis?: number,
+  noConsul?: boolean,
 
   [propName: string]: any
 }
