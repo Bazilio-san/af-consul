@@ -12,7 +12,7 @@ import {
   IConsulHealthServiceInfo,
 } from '../interfaces';
 import { sleep } from '../lib/utils';
-import { DEBUG } from '../constants';
+import { DEBUG, CONSUL_AP_UPDATE_TIMEOUT_MILLIS } from '../constants';
 
 const PREFIX = 'AP-UPDATER';
 
@@ -137,7 +137,7 @@ export const accessPointsUpdater = {
     this._logger.info('Access point updater started');
     return 1;
   },
-  async waitForAnyUpdated (timeout: number = 10_000): Promise<boolean> {
+  async waitForAnyUpdated (timeout: number = CONSUL_AP_UPDATE_TIMEOUT_MILLIS): Promise<boolean> {
     const start = Date.now();
     while (!this.isAnyUpdated && (Date.now() - start < timeout)) {
       // eslint-disable-next-line no-await-in-loop

@@ -3,6 +3,7 @@ import loggerStub from '../lib/logger-stub';
 import { blue, cyan, green, magenta, reset } from '../lib/color';
 import { IAccessPoint, IAccessPoints, ILogger, Maybe } from '../interfaces';
 import { isObject, sleep } from '../lib/utils';
+import { CONSUL_AP_UPDATE_TIMEOUT_MILLIS } from '../constants';
 
 const PREFIX = 'ACCESS-POINT';
 
@@ -15,7 +16,7 @@ const addAdditionalAPProps = (accessPoint: Record<string, any>) => {
   Object.defineProperty(accessPoint, 'isAP', { value: true });
   Object.defineProperty(accessPoint, 'lastSuccessUpdate', { value: 0, writable: true });
   Object.defineProperty(accessPoint, 'idHostPortUpdated', { value: false, writable: true });
-  accessPoint.waitForHostPortUpdated = async (timeout: number = 10_000): Promise<boolean> => {
+  accessPoint.waitForHostPortUpdated = async (timeout: number = CONSUL_AP_UPDATE_TIMEOUT_MILLIS): Promise<boolean> => {
     const start = Date.now();
     while (!accessPoint.idHostPortUpdated && (Date.now() - start < timeout)) {
       await sleep(100);
