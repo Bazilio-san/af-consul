@@ -113,6 +113,7 @@ export interface IAFConsulConfig {
   agent: IFullConsulAgentConfig,
   check?: IRegisterCheck,
   service: {
+    id?: string,
     name: string,
     instance: string,
     version: string,

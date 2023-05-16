@@ -4,20 +4,16 @@ import { getFQDNCached } from './lib/fqdn';
 import { PREFIX } from './constants';
 
 export const getServiceID = (name: string, instance: string, projectId: string = '') => {
-  if (process.env.CONSUL_SERVICE_ID) {
-    return process.env.CONSUL_SERVICE_ID;
-  }
-  const p = process.env.NODE_ENV === 'production';
+  const p = (process.env.NODE_CONSUL_ENV || process.env.NODE_ENV) === 'production';
   return `${p ? 'prd' : 'dev'}-${projectId || ''}${p ? 'r' : 'e'}01-${name}-${instance}`.toLowerCase();
 };
 
 export const getRegisterConfig = async (options: ICLOptions): Promise<IRegisterConfig> => {
   const { config, projectId = '' } = options;
   const { webServer } = config;
-
-  // eslint-disable-next-line prefer-const
-  const { host } = config?.consul?.service ?? {};
-  let { name, instance, version, description, tags, meta, port } = config?.consul?.service ?? {};
+  const consulServiceConfig = config?.consul?.service ?? {};
+  const { id, host } = consulServiceConfig;
+  let { name, instance, version, description, tags, meta, port } = consulServiceConfig;
   name = removeAroundQuotas(name);
   instance = removeAroundQuotas(instance);
   version = removeAroundQuotas(version);
@@ -32,7 +28,7 @@ export const getRegisterConfig = async (options: ICLOptions): Promise<IRegisterC
     throw new Error(`${PREFIX}: Port is empty!`);
   }
 
-  const serviceId = getServiceID(name, instance, projectId);
+  const serviceId = id || process.env.CONSUL_SERVICE_ID || getServiceID(name, instance, projectId);
 
   const address = host || (await getFQDNCached());
   if (!address) {
