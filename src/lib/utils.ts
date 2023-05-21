@@ -23,7 +23,7 @@ export const parseBoolean = (bv: any): boolean => {
 };
 
 export const substitute = (meta: object, data: object): void => {
-  const re = /%{([^}]+)}/g;
+  const re = /%?{([^}]+)}/g;
   Object.entries(meta).forEach(([k, v]) => {
     if (typeof v === 'string') {
       const matches = [...v.matchAll(re)];

@@ -28,3 +28,4 @@ local*.*
 **/dist
 /_log/
 /__tests__/af_tests/
+/test.js
