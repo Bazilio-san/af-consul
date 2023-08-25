@@ -1,6 +1,6 @@
 {
   "name": "af-consul",
-  "version": "3.0.22",
+  "version": "3.0.23",
   "description": "A highly specialized function library",
   "main": "./dist/cjs/src/index.js",
   "module": "./dist/esm/index.js",
@@ -61,6 +61,6 @@
   ],
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Bazilio-san/af-consuly.git"
+    "url": "git+https://github.com/Bazilio-san/af-consul.git"
   }
 }
