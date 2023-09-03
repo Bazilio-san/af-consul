@@ -92,6 +92,7 @@ export class AccessPoints {
     const accessPoint: Record<string, any> = {};
     addAdditionalAPProps(accessPoint);
 
+    // @ts-ignore
     this[apKey] = accessPoint;
     Object.entries(apData).forEach(([propName, v]) => {
       accessPoint[propName] = AccessPoints.normalizeValue(propName, v);
@@ -107,6 +108,7 @@ export class AccessPoints {
     if (!apData) {
       return undefined;
     }
+    // @ts-ignore
     const accessPoint = this[apKey];
     if (!accessPoint) {
       return this.addAP(apKey, apData);
@@ -151,6 +153,7 @@ export class AccessPoints {
 
   getAP (accessPointKey: string): Maybe<IAccessPoint> {
     if (accessPointKey) {
+      // @ts-ignore
       const accessPoint = this[accessPointKey];
       if (!accessPoint?.isAP) {
         return undefined;
@@ -166,6 +169,7 @@ export class AccessPoints {
    */
   get (accessPointKey?: string) {
     if (accessPointKey) {
+      // @ts-ignore
       const accessPoint = this[accessPointKey];
       if (!accessPoint?.isAP) {
         return undefined;

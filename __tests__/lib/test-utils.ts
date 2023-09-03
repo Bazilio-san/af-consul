@@ -1,5 +1,5 @@
 import { ILogObject } from 'tslog/src/interfaces';
-import { LoggerEx } from 'af-logger';
+import { LoggerEx, TLogLevelName } from 'af-logger';
 import { TLoggerMethod } from '../../src/interfaces';
 import Mock = jest.Mock;
 
@@ -20,10 +20,12 @@ export interface ILoggerMocked {
 }
 
 export const mockLogger = (logger: LoggerEx): ILoggerMocked => {
-  ['silly', 'debug', 'info', 'warn', 'error'].forEach((fnName) => {
+  (['silly', 'debug', 'info', 'warn', 'error'] as TLogLevelName[]).forEach((fnName) => {
+    // @ts-ignore
     if (logger[fnName]._isMockFunction) {
       return;
     }
+    // @ts-ignore
     const old = logger[fnName];
     logger[fnName] = jest.fn<ILogObject, any[]>((...args) => old.apply(logger, args));
   });

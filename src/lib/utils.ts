@@ -22,7 +22,7 @@ export const parseBoolean = (bv: any): boolean => {
   return !/^(false|no|0)$/i.test(bv.trim().toLowerCase());
 };
 
-export const substitute = (meta: object, data: object): void => {
+export const substitute = (meta: any, data: any): void => {
   const re = /%?{([^}]+)}/g;
   Object.entries(meta).forEach(([k, v]) => {
     if (typeof v === 'string') {
@@ -36,7 +36,7 @@ export const substitute = (meta: object, data: object): void => {
 };
 
 export const parseMeta = (m: string | object | undefined, data: object) => {
-  const metaData = {};
+  const metaData = {} as any;
   if (!m) {
     return metaData;
   }
@@ -99,8 +99,8 @@ export const serviceConfigDiff = (registerConfig: IRegisterConfig, serviceInfo: 
   const mastBeEquals = [['id', 'ID'], ['name', 'Service'], ['port', 'Port'], ['address', 'Address']];
   let diff: any[] = [];
   mastBeEquals.some(([p1, p2]) => {
-    if (registerConfig[p1] !== serviceInfo[p2]) {
-      diff = [p1, registerConfig[p1], p2, serviceInfo[p2]];
+    if (registerConfig[p1 as keyof IRegisterConfig] !== serviceInfo[p2]) {
+      diff = [p1, registerConfig[p1 as keyof IRegisterConfig], p2, serviceInfo[p2]];
       return true;
     }
     return false;

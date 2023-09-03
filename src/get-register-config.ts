@@ -71,12 +71,15 @@ export const getRegisterConfig = async (options: ICLOptions): Promise<IRegisterC
     port,
     address,
     tags,
+    // @ts-ignore
     meta: <Record<string, string>>{ ...metaObj, ...meta },
   };
   const check = { ...(config.consul?.check || {}) };
   [['name', `Service '${name}-${instance}'`], ['timeout', '5s'], ['deregistercriticalserviceafter', '3m']]
     .forEach(([n, v]) => {
+      // @ts-ignore
       if (!check[n]) {
+        // @ts-ignore
         check[n] = v;
       }
     });

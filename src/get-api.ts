@@ -50,6 +50,7 @@ export const getAPI = async (options: ICLOptions): Promise<IAFConsulAPI> => {
     } as IAFConsulAPI;
 
     Object.entries(api).forEach(([k, v]) => {
+      // @ts-ignore
       value[k] = typeof v === 'function' ? v.bind(api) : v;
     });
 
