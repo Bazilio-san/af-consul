@@ -1,5 +1,5 @@
 import * as fs from 'fs';
-import { ICache, IConsulServiceInfo, IRegisterConfig, Maybe } from '../interfaces';
+import { ICache, IConsulServiceInfo, IRegisterConfig } from '../interfaces';
 
 export const removeAroundQuotas = (str: string): string => {
   if (!str) {
@@ -92,7 +92,7 @@ export const parseTags = (t: any): string[] => {
   return [];
 };
 
-export const serviceConfigDiff = (registerConfig: IRegisterConfig, serviceInfo: Maybe<IConsulServiceInfo>): any[] => {
+export const serviceConfigDiff = (registerConfig: IRegisterConfig, serviceInfo: IConsulServiceInfo | undefined): any[] => {
   if (!serviceInfo) {
     return ['id', registerConfig.id, 'ID', undefined];
   }
@@ -119,7 +119,7 @@ export const serviceConfigDiff = (registerConfig: IRegisterConfig, serviceInfo: 
   return diff;
 };
 
-export const minimizeCache = <T>(cache: ICache<T>, maxItems: number) => {
+export const minimizeCache = <T> (cache: ICache<T>, maxItems: number) => {
   const len = Object.keys(cache).length;
   if (len >= maxItems) {
     const sortedDesc = Object.entries(cache)

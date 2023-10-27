@@ -1,7 +1,7 @@
 /* eslint-disable no-console */
 import getConsulAPI from './lib/get-consul-api';
 import { logger } from './lib/logger';
-import { IAFConsulAPI, IConsulServiceInfo, Maybe } from '../src/interfaces';
+import { IAFConsulAPI, IConsulServiceInfo } from '../src/interfaces';
 import { ILoggerMocked, mockLogger } from './lib/test-utils';
 import { getFQDNCached } from '../src';
 import { serviceConfigDiff, sleep } from '../src/lib/utils';
@@ -15,7 +15,7 @@ const log: ILoggerMocked = mockLogger(logger);
 let api: IAFConsulAPI;
 let thisHost: string;
 let expectedServiceIfo: IConsulServiceInfo;
-let serviceInfo: Maybe<IConsulServiceInfo>;
+let serviceInfo: IConsulServiceInfo | undefined;
 const serviceId = 'dev-cepe01-af-consul-test';
 
 describe('Test API', () => {

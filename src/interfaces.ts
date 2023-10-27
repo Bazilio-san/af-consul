@@ -40,7 +40,7 @@ export interface IRegisterOptions {
 export type TRegisterResult = 'already' | 'just' | false;
 
 export interface IConsul extends Consul.Consul {
-  _ext(eventName: 'onRequest' | 'onResponse', callback: (request: any, next: Function) => void): void;
+  _ext (eventName: 'onRequest' | 'onResponse', callback: (request: any, next: Function) => void): void;
 
   _defaults: any;
   _get: (...args: any[]) => any;
@@ -199,16 +199,16 @@ export interface IAPIArgs {
 export interface IConsulAPI {
   agentServiceList: (apiArgs?: IAPIArgs) => Promise<{ [serviceName: string]: IConsulServiceInfo }>,
 
-  catalogServiceList(dc: string, apiArgs?: IAPIArgs): Promise<{ [serviceId: string]: string[] }>,
+  catalogServiceList (dc: string, apiArgs?: IAPIArgs): Promise<{ [serviceId: string]: string[] }>,
 
   consulHealthService: (apiArgs: IAPIArgs) => Promise<IConsulHealthServiceInfo[]>,
-  getServiceInfo: (serviceName: string) => Promise<Maybe<IConsulServiceInfo>>,
+  getServiceInfo: (serviceName: string) => Promise<IConsulServiceInfo | undefined>,
   getServiceSocket: (serviceName: string, defaults: ISocketInfo) => Promise<ISocketInfo>,
   agentServiceRegister: (options: IRegisterConfig, withError?: boolean) => Promise<boolean>,
   agentServiceDeregister: (serviceId: string, apiArgs?: IAPIArgs) => Promise<boolean>,
   deregisterIfNeed: (serviceId: string, agentOptions?: IConsulAgentOptions) => Promise<boolean>,
   agentMembers: (apiArgs?: IAPIArgs) => Promise<TCommonFnResult>,
-  checkIfServiceRegistered: (serviceIdOrName: string, apiArgs?: IAPIArgs) => Promise<Maybe<IConsulHealthServiceInfo>>,
+  checkIfServiceRegistered: (serviceIdOrName: string, apiArgs?: IAPIArgs) => Promise<IConsulHealthServiceInfo | undefined>,
   registerService: (registerConfig: IRegisterConfig, registerOptions: IRegisterOptions) => Promise<TRegisterResult>,
 
   agentOptions: IFullConsulAgentOptions,

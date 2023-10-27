@@ -1,7 +1,7 @@
 /* eslint-disable no-await-in-loop */
 import loggerStub from '../lib/logger-stub';
 import { blue, cyan, green, magenta, reset } from '../lib/color';
-import { IAccessPoint, IAccessPoints, ILogger, Maybe } from '../interfaces';
+import { IAccessPoint, IAccessPoints, ILogger } from '../interfaces';
 import { isObject, sleep } from '../lib/utils';
 import { CONSUL_AP_UPDATE_TIMEOUT_MILLIS } from '../constants';
 
@@ -78,7 +78,7 @@ export class AccessPoints {
     return accessPoint;
   }
 
-  addAP (apKey: string, apData: any): Maybe<IAccessPoint> {
+  addAP (apKey: string, apData: any): IAccessPoint | undefined {
     if (!apData || !isObject(apData)) {
       return undefined;
     }
@@ -104,7 +104,7 @@ export class AccessPoints {
     return AccessPoints.getPureProps(accessPoint);
   }
 
-  setAP (apKey: string, apData: Record<string, any> | null): Maybe<IAccessPoint> {
+  setAP (apKey: string, apData: Record<string, any> | null): IAccessPoint | undefined {
     if (!apData) {
       return undefined;
     }
@@ -151,7 +151,7 @@ export class AccessPoints {
     return result;
   }
 
-  getAP (accessPointKey: string): Maybe<IAccessPoint> {
+  getAP (accessPointKey: string): IAccessPoint | undefined {
     if (accessPointKey) {
       // @ts-ignore
       const accessPoint = this[accessPointKey];

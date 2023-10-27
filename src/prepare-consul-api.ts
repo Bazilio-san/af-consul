@@ -1,11 +1,11 @@
 /* eslint-disable no-console,prefer-spread */
 // noinspection UnnecessaryLocalVariableJS,JSUnusedGlobalSymbols
 
-import * as Consul from 'consul';
+import Consul from 'consul';
 import { Mutex } from 'async-mutex';
 
 import { blue, cyan, magenta, reset, yellow } from './lib/color';
-import getCurl from './lib/curl-text';
+import { getCurlText } from './lib/curl-text';
 import getHttpRequestText from './lib/http-request-text';
 import {
   IAPIArgs,
@@ -21,7 +21,6 @@ import {
   IRegisterConfig,
   IRegisterOptions,
   ISocketInfo,
-  Maybe,
   TRegisterResult,
 } from './interfaces';
 import loggerStub from './lib/logger-stub';
@@ -108,7 +107,7 @@ export const prepareConsulAPI = async (clOptions: ICLOptions): Promise<IConsulAP
   const consulInstances = {} as { reg: IConsul, dev: IConsul, prd: IConsul };
   consulConfigTypes.forEach((id) => {
     const consulAgentOptions = fullConsulAgentOptions[id];
-    const consulInstance: IConsul = Consul(consulAgentOptions) as IConsul; // { host, port, secure, defaults: { token } }
+    const consulInstance: IConsul = new Consul(consulAgentOptions) as IConsul; // { host, port, secure, defaults: { token } }
     // @ts-ignore
     consulInstance[agentTypeS] = id;
 
@@ -117,7 +116,7 @@ export const prepareConsulAPI = async (clOptions: ICLOptions): Promise<IConsulAP
     consulInstance._ext('onRequest', (request, next) => {
       request._id_ = ++requestCounter;
       if (dbg.on) {
-        const msg = dbg.curl ? getCurl(request, true) : getHttpRequestText(request);
+        const msg = dbg.curl ? getCurlText(request) : getHttpRequestText(request);
         debug(`[${request._id_}] ${yellow}${msg}${reset}`);
       }
       next();
@@ -156,46 +155,37 @@ export const prepareConsulAPI = async (clOptions: ICLOptions): Promise<IConsulAP
 
   // @ts-ignore request.res.body request.res.statusCode
 
-  function common (fnName: string, {
+  const common = async (fnName: string, {
     consulInstance,
     agentOptions,
     options,
     withError,
     result,
-  }: IAPIArgs): any {
-    return new Promise((resolve, reject) => {
-      const callback = (err: Error | any, res: any) => {
-        if (err) {
-          logger.error(`[consul.${fnName}] ERROR:\n  err.message: ${err.message}\n  err.stack:\n${err.stack}\n`);
-          return withError ? reject(err) : resolve(false);
-        }
-        resolve(result || res);
-      };
+  }: IAPIArgs): Promise<any> => {
+    let fn: IConsul;
+    if (consulInstance) {
+      fn = consulInstance;
+    } else if (agentOptions) {
+      fn = Consul(agentOptions) as IConsul;
+    } else {
+      fn = consulInstances.reg;
+    }
 
-      let fn: IConsul;
-      if (consulInstance) {
-        fn = consulInstance;
-      } else if (agentOptions) {
-        fn = Consul(agentOptions) as IConsul;
-      } else {
-        fn = consulInstances.reg;
-      }
-
-      const namesArr = fnName.split('.');
-      const method: string = namesArr.pop() as string;
-      namesArr.forEach((v) => {
-        // @ts-ignore
-        fn = fn[v];
-      });
-      const args = options ? [options, callback] : [callback];
-      try {
-        // @ts-ignore
-        fn[method].apply(fn, args);
-      } catch (err: Error | any) {
-        logger.error(`ERROR (common): \n  err.message: ${err.message}\n  err.stack:\n${err.stack}\n`);
-      }
+    const namesArr = fnName.split('.');
+    const method: string = namesArr.pop() as string;
+    namesArr.forEach((v) => {
+      // @ts-ignore
+      fn = fn[v];
     });
-  }
+    try {
+      // @ts-ignore
+      const res = await fn[method].call(fn, options);
+      return result || res;
+    } catch (err: Error | any) {
+      logger.error(`[consul.${fnName}] ERROR:\n  err.message: ${err.message}\n  err.stack:\n${err.stack}\n`);
+      return withError ? err : false;
+    }
+  };
 
   const api = {
     // Returns the services the agent is managing.  - список сервисов на этом агенте
@@ -204,7 +194,8 @@ export const prepareConsulAPI = async (clOptions: ICLOptions): Promise<IConsulAP
       if (!apiArgs.consulInstance && !apiArgs.agentOptions) {
         apiArgs.consulInstance = consulInstances.reg;
       }
-      return common('agent.service.list', apiArgs);
+      const result = await common('agent.service.list', apiArgs);
+      return result;
     },
 
     // Lists services in a given datacenter
@@ -217,7 +208,8 @@ export const prepareConsulAPI = async (clOptions: ICLOptions): Promise<IConsulAP
         apiArgs.consulInstance = consulInstances[agentType];
       }
       apiArgs.options = dc;
-      return common('catalog.service.list', apiArgs);
+      const result = await common('catalog.service.list', apiArgs);
+      return result;
     },
 
     // Returns the nodes and health info of a service
@@ -234,10 +226,11 @@ export const prepareConsulAPI = async (clOptions: ICLOptions): Promise<IConsulAP
       if (!apiArgs.consulInstance && !apiArgs.agentOptions) {
         apiArgs.consulInstance = getConsulInstanceByServiceID(serviceId);
       }
-      return common('health.service', apiArgs);
+      const result = await common('health.service', apiArgs);
+      return result;
     },
 
-    async getServiceInfo (serviceName: string): Promise<Maybe<IConsulServiceInfo>> {
+    async getServiceInfo (serviceName: string): Promise<IConsulServiceInfo | undefined> {
       // ### GET https://<context.host>:<context.port>/v1/health/service/<apiArgs.options.serviceId>?passing=true&dc=<apiArgs.options.dc || context.dc>
       const result = await this.consulHealthService({
         options: {
@@ -245,8 +238,11 @@ export const prepareConsulAPI = async (clOptions: ICLOptions): Promise<IConsulAP
           passing: true,
         },
       });
-      logger.debug(`No info about service ID ${cyan}${serviceName}`);
-      return result?.[0]?.Service;
+      const res = result?.[0]?.Service;
+      if (!res) {
+        logger.debug(`No info about service ID ${cyan}${serviceName}`); // VVR
+      }
+      return res;
     },
 
     async getServiceSocket (serviceName: string, defaults: ISocketInfo): Promise<ISocketInfo> {
@@ -280,11 +276,8 @@ export const prepareConsulAPI = async (clOptions: ICLOptions): Promise<IConsulAP
     // Registers a new service.
     async agentServiceRegister (options: IRegisterConfig, withError: boolean = false): Promise<boolean> {
       // ### PUT http://<reg.host>:<reg.port>/v1/agent/service/register
-      return common('agent.service.register', {
-        options,
-        withError,
-        result: true,
-      });
+      const result = await common('agent.service.register', { options, withError, result: true });
+      return result;
     },
 
     // Deregister a service.
@@ -295,7 +288,8 @@ export const prepareConsulAPI = async (clOptions: ICLOptions): Promise<IConsulAP
       if (!apiArgs.agentOptions && !apiArgs.consulInstance) {
         apiArgs.consulInstance = consulInstances.reg;
       }
-      return common('agent.service.deregister', apiArgs);
+      const result = await common('agent.service.deregister', apiArgs);
+      return result;
     },
 
     async deregisterIfNeed (serviceId: string, agentOptions?: IConsulAgentOptions): Promise<boolean> {
@@ -331,10 +325,11 @@ export const prepareConsulAPI = async (clOptions: ICLOptions): Promise<IConsulAP
       if (!apiArgs.consulInstance && !apiArgs.agentOptions) {
         apiArgs.consulInstance = consulInstances.reg;
       }
-      return common('agent.members', apiArgs);
+      const result = await common('agent.members', apiArgs);
+      return result;
     },
 
-    async checkIfServiceRegistered (serviceIdOrName: string, apiArgs: IAPIArgs = {}): Promise<Maybe<IConsulHealthServiceInfo>> {
+    async checkIfServiceRegistered (serviceIdOrName: string, apiArgs: IAPIArgs = {}): Promise<IConsulHealthServiceInfo | undefined> {
       if (!apiArgs.consulInstance && !apiArgs.agentOptions) {
         apiArgs.consulInstance = getConsulInstanceByServiceID(serviceIdOrName);
       }

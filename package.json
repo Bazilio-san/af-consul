@@ -1,6 +1,6 @@
 {
   "name": "af-consul",
-  "version": "3.0.29",
+  "version": "3.0.30",
   "description": "A highly specialized function library",
   "main": "./dist/cjs/src/index.js",
   "module": "./dist/esm/index.js",
@@ -21,7 +21,7 @@
     "cb": "npm run clean && npm run build"
   },
   "dependencies": {
-    "@types/consul": "^0.40.1",
+    "@types/consul": "^0.40.2",
     "async-mutex": "^0.4.0",
     "consul": "^1.2.0",
     "lodash": "^4.17.21",
@@ -29,11 +29,11 @@
   },
   "devDependencies": {
     "@jest/test-sequencer": "^29.7.0",
-    "@types/debug": "^4.1.9",
-    "@types/jest": "^29.5.5",
-    "@types/lodash": "^4.14.199",
-    "@types/node": "^20.8.2",
-    "@types/xxhashjs": "^0.2.2",
+    "@types/debug": "^4.1.10",
+    "@types/jest": "^29.5.6",
+    "@types/lodash": "^4.14.200",
+    "@types/node": "^20.8.9",
+    "@types/xxhashjs": "^0.2.3",
     "af-logger": "^2.0.29",
     "config": "^3.3.9",
     "dotenv": "^16.3.1",

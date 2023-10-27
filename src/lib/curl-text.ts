@@ -1,8 +1,8 @@
 class ToCurl {
   private readonly request: any;
 
-  constructor (req: any, isPapi?: boolean) {
-    if (isPapi) {
+  constructor (req: any) {
+    if (req._client?._opts?.baseUrl?.protocol) { // Papi
       const { hostname, port, path, method, headers } = req.req;
       let data;
       if (req.body) {
@@ -20,7 +20,22 @@ class ToCurl {
         data,
       };
     } else {
-      this.request = req;
+      const { hostname, port, path, method, headers } = req.req;
+      let data;
+      if (req.body) {
+        try {
+          data = JSON.parse(req.body?.toString());
+        } catch (err) {
+          //
+        }
+      }
+      this.request = {
+        method,
+        headers,
+        url: `${req.req.agent.protocol}//${hostname}:${port}${path}`.split('?')[0],
+        params: req.opts.query,
+        data,
+      };
     }
   }
 
@@ -107,9 +122,7 @@ class ToCurl {
   }
 }
 
-const getCurlText = (req: any, isPapi?: boolean) => {
-  const instance = new ToCurl(req, isPapi);
+export const getCurlText = (req: any) => {
+  const instance = new ToCurl(req);
   return instance.getCURL();
 };
-
-export default getCurlText;
