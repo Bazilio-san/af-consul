@@ -94,8 +94,8 @@ export interface IAccessPoint {
 export interface IAccessPointsMethods {
   addAP?: (apKey: string, apData: any) => IAccessPoint | undefined,
   setAP?: (apKey: string, apData: Record<string, any> | null) => IAccessPoint | undefined,
-  getAP?: (accessPointKey: string) => IAccessPoint | undefined,
-  get?: (accessPointKey?: string) => { [apKey: string]: IAccessPoint } | IAccessPoint | undefined,
+  getAP?: (accessPointKey: string, andNotIsAP?: boolean) => IAccessPoint | undefined,
+  get?: (accessPointKey?: string, andNotIsAP?: boolean) => { [apKey: string]: IAccessPoint } | IAccessPoint | undefined,
 }
 
 export type IAccessPoints = {
