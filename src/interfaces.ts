@@ -91,9 +91,16 @@ export interface IAccessPoint {
   [propName: string]: any
 }
 
-export interface IAccessPoints {
-  [apKey: string]: IAccessPoint;
+export interface IAccessPointsMethods {
+  addAP?: (apKey: string, apData: any) => IAccessPoint | undefined,
+  setAP?: (apKey: string, apData: Record<string, any> | null) => IAccessPoint | undefined,
+  getAP?: (accessPointKey: string) => IAccessPoint | undefined,
+  get?: (accessPointKey?: string) => { [apKey: string]: IAccessPoint } | IAccessPoint | undefined,
 }
+
+export type IAccessPoints = {
+  [apKey: string]: IAccessPoint,
+} & IAccessPointsMethods
 
 export interface IConsulAgentConfig {
   host?: string, // || FQDN || env.HOST_HOSTNAME || config.consul.service?.host || '127.0.0.1'

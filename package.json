@@ -1,6 +1,6 @@
 {
   "name": "af-consul",
-  "version": "3.0.37",
+  "version": "3.0.38",
   "description": "A highly specialized function library",
   "main": "./dist/cjs/src/index.js",
   "module": "./dist/esm/src/index.js",
@@ -18,7 +18,7 @@
     "lint:fix": "eslint . --ext .ts --fix",
     "clean": "shx rm -rf dist/*",
     "build": "tsc -b tsconfig.json tsconfig.esm.json tsconfig.types.json",
-    "cb": "npm run clean && npm run build"
+    "cb": "shx rm -rf dist/* && tsc -b tsconfig.json tsconfig.esm.json tsconfig.types.json"
   },
   "dependencies": {
     "@types/consul": "^0.40.2",
