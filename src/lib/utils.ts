@@ -22,15 +22,21 @@ export const parseBoolean = (bv: any): boolean => {
   return !/^(false|no|0)$/i.test(bv.trim().toLowerCase());
 };
 
-export const substitutePercentBracket = (meta: any, data: any): void => {
-  const re = /%?{([^}]+)}/g;
+export const substitutePercentBracket = (v: string, data: object): string => {
+  const re = /%{([^}]+)}/g;
+  let result: string = v;
+  const matches = [...v.matchAll(re)];
+  matches.forEach(([found, propName]) => {
+    const substitution = String(data[propName] || '');
+    result = result.replace(found, substitution);
+  });
+  return result;
+};
+
+export const substitute = (meta: any, data: any): void => {
   Object.entries(meta).forEach(([k, v]) => {
     if (typeof v === 'string') {
-      const matches = [...v.matchAll(re)];
-      matches.forEach(([found, propName]) => {
-        const substitution = String(data[propName] || '');
-        meta[k] = meta[k].replace(found, substitution);
-      });
+      meta[k] = substitutePercentBracket(v, data);
     }
   });
 };
@@ -74,7 +80,7 @@ export const parseMeta = (m: string | object | undefined, data: object) => {
   } else if (typeof m === 'object' && !Array.isArray(m)) {
     fillMetaData(m);
   }
-  substitutePercentBracket(metaData, data);
+  substitute(metaData, data);
   return metaData;
 };
 
