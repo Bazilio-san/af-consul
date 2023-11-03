@@ -152,11 +152,11 @@ export class AccessPoints {
     return result;
   }
 
-  getAP (accessPointKey: string): IAccessPoint | undefined {
+  getAP (accessPointKey: string, andNotIsAP = false): IAccessPoint | undefined {
     if (accessPointKey) {
       // @ts-ignore
       const accessPoint = this[accessPointKey];
-      if (!accessPoint?.isAP) {
+      if (!andNotIsAP && !accessPoint?.isAP) {
         return undefined;
       }
       return accessPoint;
@@ -168,11 +168,11 @@ export class AccessPoints {
    * Если передан accessPointKey, то возвращается этот AP, если есть.
    * Если accessPointKey НЕ передан, то возвращаются ВСЕ AP
    */
-  get (accessPointKey?: string): IAccessPoints | IAccessPoint | undefined {
+  get (accessPointKey?: string, andNotIsAP = false): IAccessPoints | IAccessPoint | undefined {
     if (accessPointKey) {
       // @ts-ignore
       const accessPoint = this[accessPointKey];
-      if (!accessPoint?.isAP) {
+      if (!accessPoint || (!andNotIsAP && !accessPoint?.isAP)) {
         return undefined;
       }
       return AccessPoints.getPureProps(accessPoint);
