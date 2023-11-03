@@ -22,7 +22,7 @@ export const parseBoolean = (bv: any): boolean => {
   return !/^(false|no|0)$/i.test(bv.trim().toLowerCase());
 };
 
-export const substitute = (meta: any, data: any): void => {
+export const substitutePercentBracket = (meta: any, data: any): void => {
   const re = /%?{([^}]+)}/g;
   Object.entries(meta).forEach(([k, v]) => {
     if (typeof v === 'string') {
@@ -74,7 +74,7 @@ export const parseMeta = (m: string | object | undefined, data: object) => {
   } else if (typeof m === 'object' && !Array.isArray(m)) {
     fillMetaData(m);
   }
-  substitute(metaData, data);
+  substitutePercentBracket(metaData, data);
   return metaData;
 };
 
