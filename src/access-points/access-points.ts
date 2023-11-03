@@ -83,7 +83,8 @@ export class AccessPoints {
       return undefined;
     }
     if (apData.noConsul) {
-      return undefined;
+      this[apKey] = apData;
+      return AccessPoints.getPureProps(apData);
     }
     if (!apData.consulServiceName) {
       this[_logger_].error(`"${apKey}" access point not added because it lacks "consulServiceName" property`);
