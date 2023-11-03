@@ -168,7 +168,7 @@ export class AccessPoints {
    * Если передан accessPointKey, то возвращается этот AP, если есть.
    * Если accessPointKey НЕ передан, то возвращаются ВСЕ AP
    */
-  get (accessPointKey?: string) {
+  get (accessPointKey?: string): IAccessPoints | IAccessPoint | undefined {
     if (accessPointKey) {
       // @ts-ignore
       const accessPoint = this[accessPointKey];
@@ -177,7 +177,7 @@ export class AccessPoints {
       }
       return AccessPoints.getPureProps(accessPoint);
     }
-    const accessPoints = Object.create(null);
+    const accessPoints = Object.create(null) as IAccessPoints;
     Object.values(this).filter((ap) => ap?.isAP).forEach((accessPoint) => {
       accessPoints[accessPoint.id] = AccessPoints.getPureProps(accessPoint);
     });
