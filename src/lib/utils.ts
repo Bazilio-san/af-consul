@@ -23,7 +23,7 @@ export const parseBoolean = (bv: any): boolean => {
 };
 
 export const substitutePercentBracket = (v: string, data: object): string => {
-  const re = /%{([^}]+)}/g;
+  const re = /%?{([^}]+)}/g;
   let result: string = v;
   const matches = [...v.matchAll(re)];
   matches.forEach(([found, propName]) => {
